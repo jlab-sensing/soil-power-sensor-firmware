@@ -1,0 +1,25 @@
+digraph main {
+	init -> "read adc" [weight=2]
+	"read adc" -> "read TEROS-12" [weight=2]
+	"read TEROS-12" -> "serialize data" [weight=2]
+	"serialize data" -> "write to FRAM" [weight=2]
+	"write to FRAM" -> "If Z >= Y" [weight=2]
+	"If Z >= Y" [shape=box]
+	"If Z >= Y" -> TX [label="true"]
+	"If Z >= Y" -> "enter sleep state" [label="false"]
+	"enter sleep state" -> "watchdog = X"
+	"watchdog = X" -> "read adc"
+	TX [weight = 2]
+	TX -> LoRa
+	TX -> ESP32 [label=I2C]
+	{LoRa, ESP32} -> Dirtviz [weight=2, style=dotted]
+	Dirtviz -> RX [weight=2]
+	RX -> "verify upload" [weight=2]
+	"verify upload" -> "watchdog = X"
+
+	"X = meas interval" [shape=box]
+	"Y = # of meas per upload" [shape=box]
+	"Z = upload counter" [shape=box]
+	"X = meas interval" -> "Y = # of meas per upload" [style=dotted]
+	"Y = # of meas per upload" -> "Z = upload counter" [style=dotted]
+}
