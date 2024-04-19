@@ -7,29 +7,21 @@
 static uint32_t packetCount = 0;
 
 void onRequest() {
-    // Create the message string
-    String message = String(packetCount++) + " Packets.";
-
-    // Convert String object to byte array
-    const uint8_t* messageBytes = reinterpret_cast<const uint8_t*>(message.c_str());
-    size_t messageLength = message.length();
-
-    Wire.write(messageBytes, messageLength);
-    Serial.println("onRequest: Sent " + message);
+    const char ack[] = "ACK";
+    Wire.write((const uint8_t*)ack, sizeof(ack) - 1); // Send ACK after processing the message
+    Serial.println("Sent acknowledge");
+    Serial.print("onRequest: Sent ");
+    Serial.println(ack);
 }
 
 void onReceive(int len) {
     Serial.printf("onReceive[%d]: ", len);
-    Wire.read();
-    Wire.read();
+    Wire.read(); // skip reading the size byte
     while (Wire.available()) {
         char c = Wire.read();
         Serial.print(c);
     }
     Serial.println();
-    const char ack[] = "ACK";
-    Wire.write((const uint8_t*)ack, sizeof(ack) - 1); // Send ACK after processing the message
-    Serial.println("Sent acknowledge");
 }
 
 void initI2C() {

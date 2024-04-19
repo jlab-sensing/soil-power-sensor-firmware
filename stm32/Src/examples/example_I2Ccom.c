@@ -5,6 +5,7 @@
 #include "usart.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "rtc.h"
 #include <stdio.h>
 
 void SystemClock_Config(void);
@@ -23,7 +24,7 @@ int main(void) {
     int info_len = sprintf(info_str, "I2C Master Controller initialized, compiled on %s %s\n", __DATE__, __TIME__);
     HAL_UART_Transmit(&huart1, (const uint8_t*)info_str, info_len, 1000);
 
-    uint8_t data[] = {5, 'H', 'e', 'l', 'l', 'o'}; // The first byte is the number of subsequent data bytes
+    uint8_t data[] = {5, 'H', 'e', 'l', 'l', 'o', '!'}; // The first byte is the number of subsequent data bytes
     char output[100];
     int output_len;
 
@@ -37,16 +38,17 @@ int main(void) {
         }
         HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
 
-        uint8_t ackBuffer[3]; // Buffer to receive ACK
+        uint8_t* ackBuffer[3]; // Buffer to receive ACK
         result = HAL_I2C_Master_Receive(&hi2c2, (uint16_t)(address << 1), ackBuffer, sizeof(ackBuffer), 1000);
-
         if (result == HAL_OK && strncmp((char*)ackBuffer, "ACK", 3) == 0) {
             output_len = sprintf(output, "ACK received.\n");
         } else {
-            output_len = sprintf(output, "No ACK received, HAL status: %d\n", result);
+            output_len = sprintf(output, "\nNo ACK received, HAL status: %d\n", result);
         }
         HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
         HAL_Delay(1000);  // Delay between transmissions
+        output_len = sprintf(output, "I didn't crash\n");
+        HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
     }
 }
 
@@ -59,18 +61,22 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
+  /** Configure LSE Drive Capability
+  */
+  HAL_PWR_EnableBkUpAccess();
+  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
+
   /** Configure the main internal regulator output voltage
   */
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_11;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -88,7 +94,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.AHBCLK3Divider = RCC_SYSCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     Error_Handler();
   }
@@ -105,13 +111,10 @@ void SystemClock_Config(void)
   */
 void Error_Handler(void)
 {
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
-
-
   /* USER CODE BEGIN Error_Handler_Debug */
-  char error[30];
-  int error_len = sprintf(error, "Error!  HAL Status: %d\n", rc);
-  HAL_UART_Transmit(&huart1, (const uint8_t *) error, error_len, 1000);
+  // char error[30];
+  // int error_len = sprintf(error, "Error!  HAL Status: %d\n", rc);
+  // HAL_UART_Transmit(&huart1, (const uint8_t *)error, error_len, 1000);
 
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
