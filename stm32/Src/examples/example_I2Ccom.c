@@ -9,41 +9,44 @@
 
 void SystemClock_Config(void);
 
-int main(void)
-{
-    HAL_Init();  // Reset of all peripherals, Initializes the Flash interface and the Systick.
+int main(void) {
+    HAL_Init();
     SystemClock_Config();
     MX_GPIO_Init();
     MX_DMA_Init();
     MX_USART1_UART_Init();
     MX_I2C2_Init();
 
+    uint8_t address = 0x6B;  // I2C 7-bit address of the slave device
+
     char info_str[100];
     int info_len = sprintf(info_str, "I2C Master Controller initialized, compiled on %s %s\n", __DATE__, __TIME__);
-    HAL_UART_Transmit(&huart1, (const uint8_t*) info_str, info_len, 1000);
+    HAL_UART_Transmit(&huart1, (const uint8_t*)info_str, info_len, 1000);
 
-    uint8_t data[] = {0x05, 'H', 'e', 'l', 'l', 'o'}; // Example data to send
+    uint8_t data[] = {5, 'H', 'e', 'l', 'l', 'o'}; // The first byte is the number of subsequent data bytes
     char output[100];
     int output_len;
 
-    while (1)
-    {
-        HAL_StatusTypeDef result = I2C2_Transmit(0x40, data, sizeof(data));
+    while (1) {
+        HAL_StatusTypeDef result = I2C2_Transmit(address, data, sizeof(data));
+
         if (result == HAL_OK) {
             output_len = sprintf(output, "I2C Transmission successful.\n");
         } else {
             output_len = sprintf(output, "I2C Transmission failed, HAL status: %d\n", result);
         }
-        HAL_UART_Transmit(&huart1, (const uint8_t*) output, output_len, 1000);
+        HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
+
         uint8_t ackBuffer[3]; // Buffer to receive ACK
-        result = HAL_I2C_Master_Receive(&hi2c2, (0x40 << 1), ackBuffer, sizeof(ackBuffer), 1000);
-        if (result == HAL_OK && strncmp((char *)ackBuffer, "ACK", 3) == 0) {
+        result = HAL_I2C_Master_Receive(&hi2c2, (uint16_t)(address << 1), ackBuffer, sizeof(ackBuffer), 1000);
+
+        if (result == HAL_OK && strncmp((char*)ackBuffer, "ACK", 3) == 0) {
             output_len = sprintf(output, "ACK received.\n");
         } else {
             output_len = sprintf(output, "No ACK received, HAL status: %d\n", result);
         }
-        HAL_UART_Transmit(&huart1, (const uint8_t*) output, output_len, 1000);
-        HAL_Delay(1000);  // 1 second delay between transmissions
+        HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
+        HAL_Delay(1000);  // Delay between transmissions
     }
 }
 

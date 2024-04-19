@@ -1,42 +1,40 @@
+// i2c_slave.cpp
 #include "i2c_slave.hpp"
+#define SCL_PIN 1
+#define SDA_PIN 0
+#define I2C_DEV_ADDR 0x6B
 
-String ESP32_I2C_Slave::incomingMessage = "";
-int ESP32_I2C_Slave::expectedBytes = 0;
-bool ESP32_I2C_Slave::isFirstByte = true;
-uint8_t ESP32_I2C_Slave::slaveAddress = 0; // Initialize the static slaveAddress
+static uint32_t packetCount = 0;
 
-ESP32_I2C_Slave::ESP32_I2C_Slave(uint8_t address) {
-    slaveAddress = address; // Set the static slave address in the constructor
+void onRequest() {
+    // Create the message string
+    String message = String(packetCount++) + " Packets.";
+
+    // Convert String object to byte array
+    const uint8_t* messageBytes = reinterpret_cast<const uint8_t*>(message.c_str());
+    size_t messageLength = message.length();
+
+    Wire.write(messageBytes, messageLength);
+    Serial.println("onRequest: Sent " + message);
 }
 
-void ESP32_I2C_Slave::begin() {
-    Wire.begin(slaveAddress);
-    Wire.onReceive(receiveEvent);
-}
-
-void ESP32_I2C_Slave::receiveEvent(int howMany) {
+void onReceive(int len) {
+    Serial.printf("onReceive[%d]: ", len);
+    Wire.read();
+    Wire.read();
     while (Wire.available()) {
         char c = Wire.read();
-        if (isFirstByte) {
-            expectedBytes = c; // Read the first byte to know the message length
-            isFirstByte = false;
-            incomingMessage = ""; // Clear any previous message
-        } else {
-            incomingMessage += c;
-        }
+        Serial.print(c);
     }
-
-    if (incomingMessage.length() == expectedBytes) {
-        Serial.println(incomingMessage);  // Output the complete message
-        Wire.beginTransmission(slaveAddress);
-        Wire.write("ACK");
-        Wire.endTransmission();
-        isFirstByte = true;  // Reset for the next message
-    }
+    Serial.println();
+    const char ack[] = "ACK";
+    Wire.write((const uint8_t*)ack, sizeof(ack) - 1); // Send ACK after processing the message
+    Serial.println("Sent acknowledge");
 }
 
-String ESP32_I2C_Slave::readMessage() {
-    String msg = incomingMessage;
-    incomingMessage = "";  // Clear the static variable after reading
-    return msg;
+void initI2C() {
+    Wire.begin((uint8_t)I2C_DEV_ADDR, SDA_PIN, SCL_PIN, 100000); // ESP32 specific initialization
+    Wire.onReceive(onReceive);
+    Wire.onRequest(onRequest);
+    Serial.println("I2C configured for device address: 0x6B");
 }

@@ -1,3 +1,14 @@
+/**
+ * @file example_loop.c
+ * @brief Loops endlessly
+ * 
+ * In an infinite loop to check ESP32 signals and isolate STM32
+ * 
+ * 
+ * @author Varun Sreedharan
+ * @date 2024-04-18
+*/
+
 #include "I2Ccom.h"
 #include "main.h"
 #include "adc.h"
@@ -9,45 +20,9 @@
 
 void SystemClock_Config(void);
 
-int main(void)
-{
-    HAL_Init(); // Initialize the HAL library
-    SystemClock_Config(); // Configure the system clock
-    MX_GPIO_Init(); // Initialize GPIOs
-    MX_USART1_UART_Init(); // Initialize USART1
-    MX_I2C2_Init(); // Initialize I2C2
-
-    uint8_t address;
-    char info[64];
-    int numDevices = 0;
-
-    // HAL_Delay(1000);
-
-    HAL_UART_Transmit(&huart1, (uint8_t *)"Starting I2C scan...\r\n", 23, HAL_MAX_DELAY);
-
-    for(address = 1; address < 128; address++)
-    {
-        if(HAL_I2C_IsDeviceReady(&hi2c2, address << 1, 10, 500) == HAL_OK) // Shift address and check if device is ready
-        {
-            sprintf(info, "Device found at 0x%X\r\n", address);
-            HAL_UART_Transmit(&huart1, (uint8_t *)info, strlen(info), HAL_MAX_DELAY);
-            numDevices++;
-        }
-    }
-
-    if(numDevices == 0)
-    {
-        HAL_UART_Transmit(&huart1, (uint8_t *)"No devices found.\r\n", 19, HAL_MAX_DELAY);
-    }
-    else
-    {
-        sprintf(info, "%d devices found.\r\n", numDevices);
-        HAL_UART_Transmit(&huart1, (uint8_t *)info, strlen(info), HAL_MAX_DELAY);
-    }
-
-    while (1)
-    {
-        // Loop indefinitely
+int main(void) {
+    while (1) {
+        // loop forever
     }
 }
 
