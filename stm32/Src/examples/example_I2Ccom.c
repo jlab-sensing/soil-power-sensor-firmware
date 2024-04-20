@@ -1,4 +1,4 @@
-#include "I2Ccom.h"
+#include "esp32i2c.h"
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
@@ -13,6 +13,9 @@ void SystemClock_Config(void);
 int main(void) {
     HAL_Init();
     SystemClock_Config();
+    __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
+    /*Initialize timer and RTC*/
+    UTIL_TIMER_Init();
     MX_GPIO_Init();
     MX_DMA_Init();
     MX_USART1_UART_Init();
@@ -24,7 +27,12 @@ int main(void) {
     int info_len = sprintf(info_str, "I2C Master Controller initialized, compiled on %s %s\n", __DATE__, __TIME__);
     HAL_UART_Transmit(&huart1, (const uint8_t*)info_str, info_len, 1000);
 
-    uint8_t data[] = {5, 'H', 'e', 'l', 'l', 'o', '!'}; // The first byte is the number of subsequent data bytes
+    uint8_t data[] = {0xa, 0xa, 0x8, 0x4, 0x10, 0x7, 0x18, 0xf0, 0xab, 0xe3, 0xac,
+                    0x5, 0x22, 0x12, 0x9, 0x14, 0xae, 0x47, 0xe1, 0x7a, 0x44,
+                    0x96, 0x40, 0x11, 0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xa8, 0x9e,
+                    0x40};
+
+    //uint8_t data[] = {'H', 'e', 'l', 'l', 'o', '!'}; // The first byte is the number of subsequent data bytes
     char output[100];
     int output_len;
 
@@ -47,8 +55,8 @@ int main(void) {
         }
         HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
         HAL_Delay(1000);  // Delay between transmissions
-        output_len = sprintf(output, "I didn't crash\n");
-        HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
+        //output_len = sprintf(output, "I didn't crash\n");
+        //HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
     }
 }
 

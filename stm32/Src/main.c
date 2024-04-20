@@ -36,6 +36,7 @@
 #include "ads.h"
 #include "sdi12.h"
 #include "rtc.h"
+#include "sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -110,9 +111,15 @@ int main(void)
   ADC_init();
   SDI12_Init(GPIOA, GPIO_PIN_2);
   MX_RTC_Init();
+  SensorsInit();
 
   // Debug message, gets printed after init code
   APP_PRINTF("Soil Power Sensor Wio-E5 firmware, compiled on %s %s\n", __DATE__, __TIME__);
+
+  // configure sensors
+  SensorsAdd(ADC_measure);
+  SensorsAdd(SDI12_Teros12Measure);
+
 
   /* USER CODE END 2 */
 

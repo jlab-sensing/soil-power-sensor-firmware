@@ -49,6 +49,11 @@ int main(void)
   MX_GPIO_Init();
   MX_USART1_UART_Init();
 
+  // wait for UART
+  for (int i = 0; i < 1000000; i++) {
+      __NOP();
+  }
+
   // Unit testing
   UNITY_BEGIN();
 

@@ -316,3 +316,57 @@ HAL_StatusTypeDef SDI12_PingDevice(uint8_t deviceAddress, char *responseBuffer, 
   }
   return ret;
 }
+
+size_t SDI12_Teros12Measure(uint8_t *data) {
+  // address of teros 
+  uint8_t teros_addr = '0';
+
+  // structure to store teros measurement
+  Teros12_Data teros_measurements;
+
+  // backup data if wwe get a HAL error
+  static Teros12_Data teros_backup;
+
+  // get timestamp
+  SysTime_t ts = SysTimeGet();
+
+  // get teros measurement
+  HAL_StatusTypeDef ret;
+  ret = SDI12_GetTeros12Measurement(teros_addr, &teros_measurements, 1000);
+  if (ret != HAL_OK) {
+    simpleDelay();
+    simpleDelay();
+    simpleDelay();
+    ret = SDI12_GetTeros12Measurement(teros_addr, &teros_measurements, 1000);
+  }
+
+  // check for negative vwc
+  if (teros_measurements.vwc_adj < 0) {
+    teros_measurements = teros_backup;
+  }
+
+  // check return codes
+  APP_LOG(TS_ON, VLEVEL_M, "TEROS12 HAL ret: ");
+  if (ret == HAL_OK) {
+    APP_LOG(TS_OFF, VLEVEL_M, "HAL_OK\r\n");
+    teros_backup = teros_measurements;
+  }
+  else if (ret == HAL_ERROR) {
+    APP_LOG(TS_OFF, VLEVEL_M, "HAL_ERROR\r\n");
+    teros_measurements = teros_backup;
+  }
+  else if (ret == HAL_TIMEOUT) {
+    APP_LOG(TS_OFF, VLEVEL_M, "HAL_TIMEOUT\r\n");
+    teros_measurements = teros_backup;
+  }
+
+  // serialize data
+  size_t data_len = EncodeTeros12Measurement(ts.Seconds, LOGGER_ID, CELL_ID,
+                                             (double)teros_measurements.vwc_raw,
+                                             (double)teros_measurements.vwc_adj,
+                                             (double)teros_measurements.tmp,
+                                             teros_measurements.ec, data);
+
+  // return number of bytes in serialized measurement
+  return data_len;
+}

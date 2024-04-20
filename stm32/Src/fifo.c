@@ -1,65 +1,128 @@
 /**
-  ******************************************************************************
-  * @file    fifo.c
-  * @author  Stephen Taylor
-  * @brief   Soil Power Sensor FRAM library
-  *          This file provides functions to push/pop to the onboard FM24CL16B 
-  *          FRAM memory device. The FM24CL16B is used to store serialized measurment 
-  *          data before it is uploaded via LoRa or WiFi.
-  *          
-  *          The FM24CL16B memory archtecture is structed around 8 segments of 
-  *          256 bytes each. The measurment data is stored on the first 7 segments in
-  *          as a FIFO data structure. The 8th page is reserved for user configurable settings
-  *          with space left over for whatever information the user wishes to store in 
-  *          non-volatile memory. 
-  * @date    11/17/2023
-  *
-  ******************************************************************************
-  **/
+ * @file    fifo.c
+ * @author  Stephen Taylor
+ * @date    11/17/2023
+ * 
+ * @see fifo.h
+ **/
 
- /* Includes ------------------------------------------------------------------*/
 #include "fifo.h"
 
-int write_address_memory = 0x00;
-int write_page_memory = 0x00;
-int read_address_memory = 0x00;
-int read_page_memory = 0x00;
+static uint16_t read_addr = FRAM_BUFFER_START;
+static uint16_t write_addr = FRAM_BUFFER_START;
 
+/** Number of measurements stored in buffer */
+static uint16_t buffer_len = 0;
 
-HAL_StatusTypeDef push(const uint8_t *data, uint8_t num_bytes){
-    HAL_StatusTypeDef status = HAL_OK;
-    uint8_t byte;
-    for (int i = 0; i < num_bytes; i++){ // For every byte to be read
-        byte = data[i]; // Use individual byte from given array
-        status = HAL_I2C_Mem_Write(&hi2c2, (FM24_WRITE | write_page_memory), write_address_memory, I2C_MEMADD_SIZE_8BIT, &byte, 1, 10); // Write to a paticular segement (by ORing with page memory), and address. Write 8 bits at a time. Timeout after 10ms.
-        write_address_memory += 1; // Iterate address memory
-        if (write_address_memory > MAXIMUM_MEMORY_ADDRESS) { // If segment is full, move onto the next page
-            write_page_memory += 1;
-            write_address_memory = 0;
-        }
-        if (write_page_memory > MAXIMUM_PAGE_ADDRESS) { // If all segments are full, begin to overwrite from the first page
-            write_page_memory = 0;
-        }
+/**
+ * @brief Updates circular buffer address based on number of bytes
+ * 
+ * @param addr 
+ * @param num_bytes 
+ */
+static inline void update_addr(uint16_t *addr, const uint16_t num_bytes) {
+  *addr = (*addr + num_bytes) % fram_buffer_size;
+}
+
+/**
+ * @brief Get the remaining space in the buffer
+ * 
+ * Calculates the difference between the write and read address in a single
+ * forward direction in the circular buffer. If they are equal then nothing has
+ * been written.
+ * 
+ * @return Remaining space in bytes
+ */
+static uint16_t get_remaining_space(void) {
+  uint16_t space_used = 0;
+  if (write_addr > read_addr) {
+    space_used = write_addr - read_addr;  
+  }
+  else if (write_addr < read_addr) {
+    space_used = fram_buffer_size - (read_addr - write_addr);
+  }
+  else {
+    // if anything is stored in buffer than entire capacity is used
+    // otherwise buffer is empty and all free space is available
+    if (buffer_len > 0) {
+      space_used = fram_buffer_size;
     }
-    return status;
- }
-
-HAL_StatusTypeDef pop(uint8_t *data, uint8_t num_bytes) {
-    HAL_StatusTypeDef status = HAL_OK;
-    uint8_t byte;
-    for (int i = 0; i < num_bytes; i++){ 
-        status = HAL_I2C_Mem_Read(&hi2c2, (FM24_READ | read_page_memory), read_address_memory, I2C_MEMADD_SIZE_8BIT, &byte, 1, 10); // Read a byte of data
-        data[i] = byte; // Add the byte to the array
-        read_address_memory += 1; // Move memory address pointer forward
-        // Will need to think about segment below more
-        if (read_address_memory > MAXIMUM_MEMORY_ADDRESS) { // If segment is full, move forward by 1 page
-            read_page_memory += 1;
-            read_address_memory = 0;
-        }
-        if (read_page_memory > MAXIMUM_PAGE_ADDRESS) { // If all segments are full, begin to overwrite from the first page
-            read_page_memory = 0;
-        }
+    else {
+      space_used = 0;
     }
-    return status;
- }
+  }
 
+  uint16_t remaining_space = fram_buffer_size - space_used;
+  return remaining_space;
+}
+
+FramStatus FramPut(const uint8_t *data, const uint16_t num_bytes) {
+  // check remaining space
+  if (num_bytes+1 > get_remaining_space()) {
+    return FRAM_BUFFER_FULL;
+  }
+
+  FramStatus status;
+
+  // write single byte length to buffer
+  status = FramWrite(write_addr, &num_bytes, 1);
+  if (status != FRAM_OK) {
+    return status;
+  }
+  update_addr(&write_addr, 1);
+
+  // Write data to FRAM circular buffer
+  status = FramWrite(write_addr, data, num_bytes);
+  if (status != FRAM_OK) {
+    return status;
+  }
+  update_addr(&write_addr, num_bytes);
+
+  // increment buffer length
+  ++buffer_len;
+
+  return FRAM_OK;
+}
+
+FramStatus FramGet(uint8_t *data, uint8_t *len) {
+  // Check if buffer is empty
+  if (buffer_len == 0) {
+    return FRAM_BUFFER_EMPTY;
+  }
+
+  FramStatus status;
+
+  status = FramRead(read_addr, 1, len);
+  if (status != FRAM_OK) {
+    return status;
+  }
+  update_addr(&read_addr, 1);
+  
+
+  // Read data from FRAM circular buffer
+  status = FramRead(read_addr, *len, data);
+  if (status != FRAM_OK) {
+    return status;
+  }
+  update_addr(&read_addr, *len);
+
+  // Decrement buffer length
+  --buffer_len;
+
+  return FRAM_OK;
+}
+
+uint16_t FramBufferLen(void) {
+  return buffer_len;
+}
+
+FramStatus FramBufferClear(void) {
+  // Set read and write addresses to their default values
+  read_addr = FRAM_BUFFER_START;
+  write_addr = FRAM_BUFFER_START;
+
+  // reset buffer len
+  buffer_len = 0;
+
+  return FRAM_OK;
+}

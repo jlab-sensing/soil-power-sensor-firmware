@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    lora_app.c
-  * @author  MCD Application Team
-  * @brief   Application of the LRWAN Middleware
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    lora_app.c
+ * @author  MCD Application Team
+ * @brief   Application of the LRWAN Middleware
+ ******************************************************************************
+ * @attention
+ *
+ * Copyright (c) 2024 STMicroelectronics.
+ * All rights reserved.
+ *
+ * This software is licensed under terms that can be found in the LICENSE file
+ * in the root directory of this software component.
+ * If no LICENSE file comes with this software, it is provided AS-IS.
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -36,6 +36,8 @@
 #include "flash_if.h"
 
 /* USER CODE BEGIN Includes */
+#include "LmhpClockSync.h"
+
 #include "sdi12.h"
 #include "rtc.h"
 
@@ -49,17 +51,17 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /**
-  * @brief LoRa State Machine states
-  */
+ * @brief LoRa State Machine states
+ */
 typedef enum TxEventType_e
 {
   /**
-    * @brief Appdata Transmission issue based on timer every TxDutyCycleTime
-    */
+   * @brief Appdata Transmission issue based on timer every TxDutyCycleTime
+   */
   TX_ON_TIMER,
   /**
-    * @brief Appdata Transmission external event plugged on OnSendEvent( )
-    */
+   * @brief Appdata Transmission external event plugged on OnSendEvent( )
+   */
   TX_ON_EVENT
   /* USER CODE BEGIN TxEventType_t */
 
@@ -72,34 +74,26 @@ typedef enum TxEventType_e
 
 /* Private define ------------------------------------------------------------*/
 /**
-  * LEDs period value of the timer in ms
-  */
+ * LEDs period value of the timer in ms
+ */
 #define LED_PERIOD_TIME 500
 
 /**
-  * Join switch period value of the timer in ms
-  */
+ * Join switch period value of the timer in ms
+ */
 #define JOIN_TIME 2000
 
 /*---------------------------------------------------------------------------*/
 /*                             LoRaWAN NVM configuration                     */
 /*---------------------------------------------------------------------------*/
 /**
-  * @brief LoRaWAN NVM Flash address
-  * @note last 2 sector of a 128kBytes device
-  */
-#define LORAWAN_NVM_BASE_ADDRESS                    ((void *)0x0803F000UL)
+ * @brief LoRaWAN NVM Flash address
+ * @note last 2 sector of a 128kBytes device
+ */
+#define LORAWAN_NVM_BASE_ADDRESS ((void *)0x0803F000UL)
 
 /* USER CODE BEGIN PD */
-bool transmission_cycle = false;
-uint8_t fake_min = 19;
-uint8_t fake_second = 0;
-uint8_t fake_hour = 11;
-
-Teros12_Data teros_backup;
-
-#define LOGGER_ID 200 // Will be user configurable later
-#define CELL_ID 200
+#define TIMESYNC_PERIOD 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -109,208 +103,229 @@ Teros12_Data teros_backup;
 
 /* Private function prototypes -----------------------------------------------*/
 /**
-  * @brief  LoRa End Node send request
-  */
+ * @brief  LoRa End Node send request
+ */
 static void SendTxData(void);
 
 /**
-  * @brief  TX timer callback function
-  * @param  context ptr of timer context
-  */
+ * @brief  TX timer callback function
+ * @param  context ptr of timer context
+ */
 static void OnTxTimerEvent(void *context);
 
 /**
-  * @brief  join event callback function
-  * @param  joinParams status of join
-  */
+ * @brief  join event callback function
+ * @param  joinParams status of join
+ */
 static void OnJoinRequest(LmHandlerJoinParams_t *joinParams);
 
 /**
-  * @brief callback when LoRaWAN application has sent a frame
-  * @brief  tx event callback function
-  * @param  params status of last Tx
-  */
+ * @brief callback when LoRaWAN application has sent a frame
+ * @brief  tx event callback function
+ * @param  params status of last Tx
+ */
 static void OnTxData(LmHandlerTxParams_t *params);
 
 /**
-  * @brief callback when LoRaWAN application has received a frame
-  * @param appData data received in the last Rx
-  * @param params status of last Rx
-  */
+ * @brief callback when LoRaWAN application has received a frame
+ * @param appData data received in the last Rx
+ * @param params status of last Rx
+ */
 static void OnRxData(LmHandlerAppData_t *appData, LmHandlerRxParams_t *params);
 
 /**
-  * @brief callback when LoRaWAN Beacon status is updated
-  * @param params status of Last Beacon
-  */
+ * @brief callback when LoRaWAN Beacon status is updated
+ * @param params status of Last Beacon
+ */
 static void OnBeaconStatusChange(LmHandlerBeaconParams_t *params);
 
 /**
-  * @brief callback when system time has been updated
-  */
+ * @brief callback when system time has been updated
+ */
 static void OnSysTimeUpdate(void);
 
 /**
-  * @brief callback when LoRaWAN application Class is changed
-  * @param deviceClass new class
-  */
+ * @brief callback when LoRaWAN application Class is changed
+ * @param deviceClass new class
+ */
 static void OnClassChange(DeviceClass_t deviceClass);
 
 /**
-  * @brief  LoRa store context in Non Volatile Memory
-  */
+ * @brief  LoRa store context in Non Volatile Memory
+ */
 static void StoreContext(void);
 
 /**
-  * @brief  stop current LoRa execution to switch into non default Activation mode
-  */
+ * @brief  stop current LoRa execution to switch into non default Activation mode
+ */
 static void StopJoin(void);
 
 /**
-  * @brief  Join switch timer callback function
-  * @param  context ptr of Join switch context
-  */
+ * @brief  Join switch timer callback function
+ * @param  context ptr of Join switch context
+ */
 static void OnStopJoinTimerEvent(void *context);
 
 /**
-  * @brief  Notifies the upper layer that the NVM context has changed
-  * @param  state Indicates if we are storing (true) or restoring (false) the NVM context
-  */
+ * @brief  Notifies the upper layer that the NVM context has changed
+ * @param  state Indicates if we are storing (true) or restoring (false) the NVM context
+ */
 static void OnNvmDataChange(LmHandlerNvmContextStates_t state);
 
 /**
-  * @brief  Store the NVM Data context to the Flash
-  * @param  nvm ptr on nvm structure
-  * @param  nvm_size number of data bytes which were stored
-  */
+ * @brief  Store the NVM Data context to the Flash
+ * @param  nvm ptr on nvm structure
+ * @param  nvm_size number of data bytes which were stored
+ */
 static void OnStoreContextRequest(void *nvm, uint32_t nvm_size);
 
 /**
-  * @brief  Restore the NVM Data context from the Flash
-  * @param  nvm ptr on nvm structure
-  * @param  nvm_size number of data bytes which were restored
-  */
+ * @brief  Restore the NVM Data context from the Flash
+ * @param  nvm ptr on nvm structure
+ * @param  nvm_size number of data bytes which were restored
+ */
 static void OnRestoreContextRequest(void *nvm, uint32_t nvm_size);
 
 /**
-  * Will be called each time a Radio IRQ is handled by the MAC layer
-  *
-  */
+ * Will be called each time a Radio IRQ is handled by the MAC layer
+ *
+ */
 static void OnMacProcessNotify(void);
 
 /**
-  * @brief Change the periodicity of the uplink frames
-  * @param periodicity uplink frames period in ms
-  * @note Compliance test protocol callbacks
-  */
+ * @brief Change the periodicity of the uplink frames
+ * @param periodicity uplink frames period in ms
+ * @note Compliance test protocol callbacks
+ */
 static void OnTxPeriodicityChanged(uint32_t periodicity);
 
 /**
-  * @brief Change the confirmation control of the uplink frames
-  * @param isTxConfirmed Indicates if the uplink requires an acknowledgement
-  * @note Compliance test protocol callbacks
-  */
+ * @brief Change the confirmation control of the uplink frames
+ * @param isTxConfirmed Indicates if the uplink requires an acknowledgement
+ * @note Compliance test protocol callbacks
+ */
 static void OnTxFrameCtrlChanged(LmHandlerMsgTypes_t isTxConfirmed);
 
 /**
-  * @brief Change the periodicity of the ping slot frames
-  * @param pingSlotPeriodicity ping slot frames period in ms
-  * @note Compliance test protocol callbacks
-  */
+ * @brief Change the periodicity of the ping slot frames
+ * @param pingSlotPeriodicity ping slot frames period in ms
+ * @note Compliance test protocol callbacks
+ */
 static void OnPingSlotPeriodicityChanged(uint8_t pingSlotPeriodicity);
 
 /**
-  * @brief Will be called to reset the system
-  * @note Compliance test protocol callbacks
-  */
+ * @brief Will be called to reset the system
+ * @note Compliance test protocol callbacks
+ */
 static void OnSystemReset(void);
 
 /* USER CODE BEGIN PFP */
+/**
+ * @brief Time synchronization timer callback
+ *
+ * Registers TimeSync task with the synchronizer.
+ */
+static void OnTimeSync(void);
 
+/**
+ * @brief Requests a time synchronization from the application server
+ *
+ * Once the synchronization is completed the timer is stopped.
+ */
+static void TimeSync(void);
 /* USER CODE END PFP */
 
 /* Private variables ---------------------------------------------------------*/
 /**
-  * @brief LoRaWAN default activation type
-  */
+ * @brief LoRaWAN default activation type
+ */
 static ActivationType_t ActivationType = LORAWAN_DEFAULT_ACTIVATION_TYPE;
 
 /**
-  * @brief LoRaWAN force rejoin even if the NVM context is restored
-  */
+ * @brief LoRaWAN force rejoin even if the NVM context is restored
+ */
 static bool ForceRejoin = LORAWAN_FORCE_REJOIN_AT_BOOT;
 
 /**
-  * @brief LoRaWAN handler Callbacks
-  */
+ * @brief LoRaWAN handler Callbacks
+ */
 static LmHandlerCallbacks_t LmHandlerCallbacks =
-{
-  .GetBatteryLevel =              GetBatteryLevel,
-  .GetTemperature =               GetTemperatureLevel,
-  .GetUniqueId =                  GetUniqueId,
-  .GetDevAddr =                   GetDevAddr,
-  .OnRestoreContextRequest =      OnRestoreContextRequest,
-  .OnStoreContextRequest =        OnStoreContextRequest,
-  .OnMacProcess =                 OnMacProcessNotify,
-  .OnNvmDataChange =              OnNvmDataChange,
-  .OnJoinRequest =                OnJoinRequest,
-  .OnTxData =                     OnTxData,
-  .OnRxData =                     OnRxData,
-  .OnBeaconStatusChange =         OnBeaconStatusChange,
-  .OnSysTimeUpdate =              OnSysTimeUpdate,
-  .OnClassChange =                OnClassChange,
-  .OnTxPeriodicityChanged =       OnTxPeriodicityChanged,
-  .OnTxFrameCtrlChanged =         OnTxFrameCtrlChanged,
-  .OnPingSlotPeriodicityChanged = OnPingSlotPeriodicityChanged,
-  .OnSystemReset =                OnSystemReset,
+    {
+        .GetBatteryLevel = GetBatteryLevel,
+        .GetTemperature = GetTemperatureLevel,
+        .GetUniqueId = GetUniqueId,
+        .GetDevAddr = GetDevAddr,
+        .OnRestoreContextRequest = OnRestoreContextRequest,
+        .OnStoreContextRequest = OnStoreContextRequest,
+        .OnMacProcess = OnMacProcessNotify,
+        .OnNvmDataChange = OnNvmDataChange,
+        .OnJoinRequest = OnJoinRequest,
+        .OnTxData = OnTxData,
+        .OnRxData = OnRxData,
+        .OnBeaconStatusChange = OnBeaconStatusChange,
+        .OnSysTimeUpdate = OnSysTimeUpdate,
+        .OnClassChange = OnClassChange,
+        .OnTxPeriodicityChanged = OnTxPeriodicityChanged,
+        .OnTxFrameCtrlChanged = OnTxFrameCtrlChanged,
+        .OnPingSlotPeriodicityChanged = OnPingSlotPeriodicityChanged,
+        .OnSystemReset = OnSystemReset,
 };
 
 /**
-  * @brief LoRaWAN handler parameters
-  */
+ * @brief LoRaWAN handler parameters
+ */
 static LmHandlerParams_t LmHandlerParams =
-{
-  .ActiveRegion =             ACTIVE_REGION,
-  .DefaultClass =             LORAWAN_DEFAULT_CLASS,
-  .AdrEnable =                LORAWAN_ADR_STATE,
-  .IsTxConfirmed =            LORAWAN_DEFAULT_CONFIRMED_MSG_STATE,
-  .TxDatarate =               LORAWAN_DEFAULT_DATA_RATE,
-  .TxPower =                  LORAWAN_DEFAULT_TX_POWER,
-  .PingSlotPeriodicity =      LORAWAN_DEFAULT_PING_SLOT_PERIODICITY,
-  .RxBCTimeout =              LORAWAN_DEFAULT_CLASS_B_C_RESP_TIMEOUT
-};
+    {
+        .ActiveRegion = ACTIVE_REGION,
+        .DefaultClass = LORAWAN_DEFAULT_CLASS,
+        .AdrEnable = LORAWAN_ADR_STATE,
+        .IsTxConfirmed = LORAWAN_DEFAULT_CONFIRMED_MSG_STATE,
+        .TxDatarate = LORAWAN_DEFAULT_DATA_RATE,
+        .TxPower = LORAWAN_DEFAULT_TX_POWER,
+        .PingSlotPeriodicity = LORAWAN_DEFAULT_PING_SLOT_PERIODICITY,
+        .RxBCTimeout = LORAWAN_DEFAULT_CLASS_B_C_RESP_TIMEOUT};
 
 /**
-  * @brief Type of Event to generate application Tx
-  */
+ * @brief Type of Event to generate application Tx
+ */
 static TxEventType_t EventType = TX_ON_TIMER;
 
 /**
-  * @brief Timer to handle the application Tx
-  */
+ * @brief Timer to handle the application Tx
+ */
 static UTIL_TIMER_Object_t TxTimer;
 
 /**
-  * @brief Tx Timer period
-  */
+ * @brief Tx Timer period
+ */
 static UTIL_TIMER_Time_t TxPeriodicity = APP_TX_DUTYCYCLE;
 
 /**
-  * @brief Join Timer period
-  */
+ * @brief Join Timer period
+ */
 static UTIL_TIMER_Object_t StopJoinTimer;
 
 /* USER CODE BEGIN PV */
 
 /**
-  * @brief User application buffer
-  */
+ * @brief User application buffer
+ */
 static uint8_t AppDataBuffer[LORAWAN_APP_DATA_BUFFER_MAX_SIZE];
 
 /**
-  * @brief User application data structure
-  */
-static LmHandlerAppData_t AppData = { 0, 0, AppDataBuffer };
+ * @brief User application data structure
+ */
+static LmHandlerAppData_t AppData = {0, 0, AppDataBuffer};
+
+/**
+ * @brief Timer for repeated time sync events
+ */
+static UTIL_TIMER_Object_t TimeSyncTimer;
+
+/**
+ * @brief Period for time sync events
+ */
+static const UTIL_TIMER_Time_t TimeSyncPeriod = TIMESYNC_PERIOD;
 
 /* USER CODE END PV */
 
@@ -364,6 +379,21 @@ void LoRaWAN_Init(void)
   }
 
   /* USER CODE BEGIN LoRaWAN_Init_Last */
+  /*
+  // register task and create timer
+  UTIL_SEQ_RegTask((1 << CFG_SEQ_Task_TimeSync), UTIL_SEQ_RFU, TimeSync);
+  UTIL_TIMER_Create(&TimeSyncTimer, TIMESYNC_PERIOD, UTIL_TIMER_PERIODIC,
+                    OnTimeSync, NULL);
+
+  // start timer
+  UTIL_TIMER_Start(&TimeSyncTimer);
+  */
+
+  // register task and create timer
+  UTIL_SEQ_RegTask((1 << CFG_SEQ_Task_TimeSync), UTIL_SEQ_RFU, TimeSync);
+  UTIL_TIMER_Create(&TimeSyncTimer, TimeSyncPeriod, UTIL_TIMER_PERIODIC,
+                    OnTimeSync, NULL);
+
 
   /* USER CODE END LoRaWAN_Init_Last */
 }
@@ -407,16 +437,16 @@ static void OnRxData(LmHandlerAppData_t *appData, LmHandlerRxParams_t *params)
   if ((appData != NULL) || (params != NULL))
   {
 
-    static const char *slotStrings[] = { "1", "2", "C", "C Multicast", "B Ping-Slot", "B Multicast Ping-Slot" };
+    static const char *slotStrings[] = {"1", "2", "C", "C Multicast", "B Ping-Slot", "B Multicast Ping-Slot"};
 
     APP_LOG(TS_OFF, VLEVEL_M, "\r\n###### ========== MCPS-Indication ==========\r\n");
     APP_LOG(TS_OFF, VLEVEL_H, "###### D/L FRAME:%04d | SLOT:%s | PORT:%d | DR:%d | RSSI:%d | SNR:%d\r\n",
             params->DownlinkCounter, slotStrings[params->RxSlot], appData->Port, params->Datarate, params->Rssi, params->Snr);
     switch (appData->Port)
     {
-      // TODO add cases for incoming data on ports
-      default:
-        break;
+    // TODO add cases for incoming data on ports
+    default:
+      break;
     }
   }
   /* USER CODE END OnRxData_1 */
@@ -426,110 +456,49 @@ static void SendTxData(void)
 {
   /* USER CODE BEGIN SendTxData_1 */
 
-  uint8_t battery_level;
-  uint16_t temperature;
-  Teros12_Data teros_measurments;
-  HAL_StatusTypeDef ret;
-  uint8_t teros_addr = '0';
-  uint8_t cell_id = CELL_ID;
-  uint8_t logger_id = LOGGER_ID;
+  // preconditions
 
-  if (LmHandlerIsBusy() == false)
+  // check if radio is busy
+  if (LmHandlerIsBusy())
   {
-    battery_level = GetBatteryLevel();
-    temperature = SYS_GetTemperatureLevel();
-
-    RTC_TimeTypeDef sTime;
-    RTC_DateTypeDef sDate;
-    //ret = HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-    // ret = HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-
-    fake_second = fake_second + 10;
-    if (fake_second >= 60){
-      fake_min = fake_min + 1;
-      fake_second = 0;
-    }
-    if (fake_min >= 60) {
-      fake_hour = fake_hour +1;
-      fake_min = 0;
-    }
-
-    struct tm timeInfo = {
-        .tm_year = 124,  // 2021 (since 1900)
-        .tm_mon = 1,    // January (0-based)
-        .tm_mday = 22,
-        .tm_hour = fake_hour,
-        .tm_min = fake_min,
-        .tm_sec = fake_second,
-    };
-    
-    //APP_LOG(TS_OFF, VLEVEL_M, "Time: %02d:%02d:%02d\r\n", timeInfo.tm_hour, timeInfo.tm_min, timeInfo.tm_sec);
-    // APP_LOG(TS_OFF, VLEVEL_M, "Date: %02d-%02d-%04d\r\n", sDate.Date, sDate.Month, sDate.Year + 2000);
-
-    time_t unixTimestamp = mktime(&timeInfo);
-
-    if (transmission_cycle == false) { // alternate betwen power and soil moisture sensor
-      int adc_voltage = ADC_readVoltage();
-      double adc_voltage_float = ((double) adc_voltage) / 1000.;
-      AppData.BufferSize = EncodePowerMeasurement((uint32_t) unixTimestamp,
-                                                  LOGGER_ID, CELL_ID,
-                                                  adc_voltage_float, 0.0,
-                                                  AppData.Buffer);
-    } else {
-      // SDI12_Measure_TypeDef measurment_info;
-      // char data[25];
-      //ret = SDI12_GetMeasurment(teros_addr, &measurment_info, data, 1000);
-      ret = SDI12_GetTeros12Measurement(teros_addr, &teros_measurments, 1000);
-      if (ret != HAL_OK){
-        simpleDelay();
-        simpleDelay();
-        simpleDelay();
-        ret = SDI12_GetTeros12Measurement(teros_addr, &teros_measurments, 1000);
-      }
-      if (teros_measurments.vwc_adj < 0){
-        teros_measurments = teros_backup;
-      }
-      
-      if (ret == HAL_OK){
-        APP_LOG(TS_OFF, VLEVEL_M, "HAL_OK\r\n");
-        teros_backup = teros_measurments;
-      } else if (ret == HAL_ERROR){
-        APP_LOG(TS_OFF, VLEVEL_M, "HAL_ERROR\r\n");
-        teros_measurments = teros_backup;
-      } else if (ret == HAL_TIMEOUT) {
-        APP_LOG(TS_OFF, VLEVEL_M, "HAL_TIMEOUT\r\n");
-        teros_measurments = teros_backup;
-      }
-      AppData.BufferSize = EncodeTeros12Measurement((uint32_t) unixTimestamp,
-                                                    LOGGER_ID, CELL_ID,
-                                                    (double) teros_measurments.vwc_raw,
-                                                    (double) teros_measurments.vwc_adj,
-                                                    (double) teros_measurments.tmp,
-                                                    teros_measurments.ec,
-                                                    AppData.Buffer);
-    }
-    transmission_cycle = !transmission_cycle;
-  
-    APP_LOG(TS_ON, VLEVEL_M, "Payload: ");
-    for (int i = 0; i < AppData.BufferSize; i++){
-      APP_LOG(TS_OFF, VLEVEL_M, "%x ", AppData.Buffer[i]);
-    }
-    APP_LOG(TS_OFF, VLEVEL_M, "\r\n");
-    APP_LOG(TS_ON, VLEVEL_M, "%d\r\n", AppData.BufferSize);
-
-    AppData.Port = LORAWAN_SPS_MEAS_PORT;
-
-    if (LORAMAC_HANDLER_SUCCESS == LmHandlerSend(&AppData, LORAWAN_DEFAULT_CONFIRMED_MSG_STATE, false))
-    {
-      APP_LOG(TS_ON, VLEVEL_L, "SEND REQUEST\r\n");
-    }
-    else
-    {
-      APP_LOG(TS_OFF, VLEVEL_M, "Could not send request\r\n");
-    }
+    return;
   }
 
+  // check if buffer is empty
+  if (FramBufferLen() <= 0)
+  {
+    return;
+  }
 
+  uint8_t battery_level = GetBatteryLevel();
+  uint16_t temperature = SYS_GetTemperatureLevel();
+
+  FramStatus status = FramGet(AppData.Buffer, &AppData.BufferSize);
+  if (status != FRAM_OK)
+  {
+    APP_LOG(TS_OFF, VLEVEL_M,
+            "Error getting data from fram buffer. FramStatus = %d", status);
+    return;
+  }
+
+  APP_LOG(TS_ON, VLEVEL_M, "Payload: ");
+  for (int i = 0; i < AppData.BufferSize; i++)
+  {
+    APP_LOG(TS_OFF, VLEVEL_M, "%x ", AppData.Buffer[i]);
+  }
+  APP_LOG(TS_OFF, VLEVEL_M, "\r\n");
+  APP_LOG(TS_ON, VLEVEL_M, "%d\r\n", AppData.BufferSize);
+
+  AppData.Port = LORAWAN_SPS_MEAS_PORT;
+
+  if (LORAMAC_HANDLER_SUCCESS == LmHandlerSend(&AppData, LORAWAN_DEFAULT_CONFIRMED_MSG_STATE, false))
+  {
+    APP_LOG(TS_ON, VLEVEL_L, "SEND REQUEST\r\n");
+  }
+  else
+  {
+    APP_LOG(TS_OFF, VLEVEL_M, "Could not send request\r\n");
+  }
   /* USER CODE END SendTxData_1 */
 }
 
@@ -593,6 +562,9 @@ static void OnJoinRequest(LmHandlerJoinParams_t *joinParams)
       {
         APP_LOG(TS_OFF, VLEVEL_M, "OTAA =====================\r\n");
       }
+
+      // start timer to sync clock
+      UTIL_TIMER_Start(&TimeSyncTimer);
     }
     else
     {
@@ -806,3 +778,30 @@ static void OnRestoreContextRequest(void *nvm, uint32_t nvm_size)
   /* USER CODE END OnRestoreContextRequest_Last */
 }
 
+void OnTimeSync(void)
+{
+  // schedule task in sequencer
+  UTIL_SEQ_SetTask((1 << CFG_SEQ_Task_TimeSync), CFG_SEQ_Prio_0);
+}
+
+void TimeSync(void)
+{
+  // try to sync the clock
+  LmHandlerErrorStatus_t status = LmhpClockSyncAppTimeReq();
+  if (status == LORAMAC_HANDLER_SUCCESS)
+  {
+    // stop timer
+    UTIL_TIMER_Stop(&TimeSyncTimer);
+
+    // start sensor measurements
+    SensorsStart();
+
+    APP_LOG(TS_ON, VLEVEL_M, "Clock initiated\r\n");
+  }
+  else
+  {
+    APP_LOG(TS_OFF, VLEVEL_M,
+            "Clock synchronization failed. Retrying in %u ms.\r\n",
+            TimeSyncPeriod)
+  }
+}

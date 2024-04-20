@@ -9,5 +9,8 @@
 void onRequest();
 void onReceive(int len);
 void initI2C();
+void resetDataBuffer();
+uint8_t* returnDataBuffer();
+int getDataCount();
 
 #endif // I2C_COMM_HPP
