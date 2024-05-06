@@ -9,7 +9,7 @@
 #include <WiFi.h>
 
 #include "dirtviz.hpp"
-#include "i2c_slave.hpp"
+#include "i2c_secondary.hpp"
 
 /** Baud rate for serial interface */
 #define SERIAL_BAUD 115200

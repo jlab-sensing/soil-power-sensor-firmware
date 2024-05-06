@@ -21,3 +21,9 @@ HAL_StatusTypeDef I2C2_Transmit(uint8_t addr, uint8_t* data, uint16_t size) {
     // Shift the 7-bit address left to form the 8-bit address (including the R/W bit)
     return HAL_I2C_Master_Transmit(&hi2c2, (uint16_t)(addr << 1), frame, size + 1, 1000);
 }
+
+HAL_StatusTypeDef I2C2_Receive(uint8_t addr, uint8_t* data, uint16_t size) {
+    uint8_t* ackBuffer[3]; // Buffer to receive ACK
+    HAL_StatusTypeDef result = HAL_I2C_Master_Receive(&hi2c2, (uint16_t)(addr << 1), ackBuffer, size, 1000);
+    return result;
+}

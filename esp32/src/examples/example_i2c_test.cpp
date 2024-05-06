@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "Wire.h"
+#include "i2c_secondary.hpp"
 
 #define I2C_DEV_ADDR 0x6B
 #define SCL 1
