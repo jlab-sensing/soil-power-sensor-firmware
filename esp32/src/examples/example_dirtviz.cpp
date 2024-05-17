@@ -13,10 +13,10 @@
 /** Baud rate for serial interface */
 #define SERIAL_BAUD 115200
 
-const char ssid[] = "ResWiFi-Devices";
-const char pass[] = "RbRr2V7X3h288qScPg";
+const char ssid[] = "ssid";
+const char pass[] = "password";
 
-Dirtviz api("100.64.27.220", 8080);
+Dirtviz api("ip address", 8080);
 
 const char data[] = "hello!";
 const size_t data_len = 6;

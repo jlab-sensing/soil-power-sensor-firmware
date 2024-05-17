@@ -15,9 +15,9 @@
 #define SCL 1
 #define SDA 0
 
-const char ssid[] = "ResWiFi-Devices";
-const char pass[] = "RbRr2V7X3h288qScPg";
-const char serverIp[] = "100.64.27.220";  // Your computer's IP address
+const char ssid[] = "ssid";
+const char pass[] = "password";
+const char serverIp[] = "ip address";  // Your computer's IP address
 const uint16_t serverPort = 8080;
 
 Dirtviz api(serverIp, serverPort);
