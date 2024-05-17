@@ -83,6 +83,7 @@ typedef enum
   CFG_SEQ_Task_Measurement,
   CFG_SEQ_Task_TimeSync,
   CFG_SEQ_Task_printHello,
+  CFG_SEQ_Task_TransmitI2C,
   /* USER CODE END CFG_SEQ_Task_Id_t */
   CFG_SEQ_Task_NBR
 } CFG_SEQ_Task_Id_t;

@@ -2,36 +2,116 @@
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
+#include "sys_app.h"
+#include "stm32_seq.h"
 #include "usart.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "rtc.h"
+#include "platform.h"
+#include "sys_app.h"
+#include "lora_app.h"
+#include "stm32_seq.h"
+#include "stm32_timer.h"
+#include "utilities_def.h"
+#include "app_version.h"
+#include "lorawan_version.h"
+#include "subghz_phy_version.h"
+#include "lora_info.h"
+#include "LmHandler.h"
+#include "adc_if.h"
+#include "CayenneLpp.h"
+#include "sys_sensors.h"
+#include "flash_if.h"
 #include <stdio.h>
 
+
 void SystemClock_Config(void);
+
+typedef struct {
+    uint8_t *data;
+    size_t size;
+} I2CData;
+
+// Global variable to hold the data
+I2CData g_I2CData;
+
+void TransmitI2C(void) {
+    if (g_I2CData.data == NULL || g_I2CData.size == 0) {
+        // Log error or handle the situation when no data is set
+        return;
+    }
+
+    uint8_t address = 0x6B << 1;  // I2C address, shifted for write operation
+    char output[100];
+    int output_len;
+    uint8_t data[] = {'h', 'e', 'l', 'l', 'o', '\0'};
+
+    // Transmit the data over I2C
+    HAL_StatusTypeDef result = I2C2_Transmit(address, data, sizeof(data));
+    if (result == HAL_OK) {
+        output_len = sprintf(output, "I2C Transmission successful.\n");
+    } else {
+        output_len = sprintf(output, "I2C Transmission failed, HAL status: %d\n", result);
+    }
+    HAL_UART_Transmit(&huart1, (uint8_t*)output, output_len, 1000);
+}
+
+void onTransmitI2C(void *context) {
+    // As this function does not use the context parameter, you can ignore it
+    UTIL_SEQ_SetTask((1 << CFG_SEQ_Task_TransmitI2C), CFG_SEQ_Prio_0);
+}
+
+void Error_Handler(void) {
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1) {
+    }
+}
 
 int main(void) {
     HAL_Init();
     SystemClock_Config();
     __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
     /*Initialize timer and RTC*/
-    UTIL_TIMER_Init();
+    //UTIL_TIMER_Init();
     MX_GPIO_Init();
     MX_DMA_Init();
     MX_USART1_UART_Init();
     MX_I2C2_Init();
+    SystemApp_Init();
 
-    uint8_t address = 0x6B;
+    uint8_t address = 0x6B;  // I2C 7-bit address of the slave device
+
     char info_str[100];
     int info_len = sprintf(info_str, "I2C Master Controller initialized, compiled on %s %s\n", __DATE__, __TIME__);
     HAL_UART_Transmit(&huart1, (const uint8_t*)info_str, info_len, 1000);
 
-    uint8_t data[] = {'h', 'e', 'l', 'l', 'o', '\0'};
+    uint8_t data[] = {0xa, 0xa, 0x8, 0x4, 0x10, 0x7, 0x18, 0xf0, 0xab, 0xe3, 0xac,
+                    0x5, 0x22, 0x12, 0x9, 0x14, 0xae, 0x47, 0xe1, 0x7a, 0x44,
+                    0x96, 0x40, 0x11, 0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xa8, 0x9e,
+                    0x40};
+
+    //uint8_t data[] = {'H', 'e', 'l', 'l', 'o', '!'}; // The first byte is the number of subsequent data bytes
     char output[100];
     int output_len;
+    CFG_SEQ_Task_printHello;
+    void onPrintHello(void) {
+      UTIL_SEQ_SetTask((1 << CFG_SEQ_Task_printHello), CFG_SEQ_Prio_0);
+    }
 
+    void printHello(void) {
+      char hello_str[] = "hello\r\n";
+      HAL_UART_Transmit(&huart1, (const uint8_t*)hello_str, sizeof(hello_str) - 1, 1000);
+    }
+    UTIL_SEQ_RegTask((1 << CFG_SEQ_Task_printHello), UTIL_SEQ_RFU, printHello);
+    UTIL_TIMER_Object_t testTimer;
+    UTIL_TIMER_Create(&testTimer, 500, UTIL_TIMER_PERIODIC, onPrintHello, NULL);
+    UTIL_TIMER_Start(&testTimer);
     while (1) {
-        HAL_StatusTypeDef result = I2C2_Transmit(address, data, sizeof(data));
+        UTIL_SEQ_Run(UTIL_SEQ_DEFAULT);
+        
+        /*HAL_StatusTypeDef result = I2C2_Transmit(address, data, sizeof(data));
 
         if (result == HAL_OK) {
             output_len = sprintf(output, "I2C Transmission successful.\n");
@@ -49,6 +129,8 @@ int main(void) {
         }
         HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
         HAL_Delay(1000);  // Delay between transmissions
+        //output_len = sprintf(output, "I didn't crash\n");
+        //HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);*/
     }
 }
 

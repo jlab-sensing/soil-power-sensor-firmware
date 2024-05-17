@@ -9,7 +9,7 @@
  * @date 2024-04-18
 */
 
-#include "I2Ccom.h"
+#include "esp32i2c.h"
 #include "main.h"
 #include "adc.h"
 #include "dma.h"

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "Wire.h"
+#include <WiFi.h>
 #include "i2c_secondary.hpp"
 
 #define I2C_DEV_ADDR 0x6B
@@ -8,10 +9,11 @@
 
 uint32_t i = 0;
 
-void onRequest(){
-  Wire.print(i++);
-  Wire.print(" Packets.");
-  Serial.println("onRequest");
+void onRequest() {
+    const char ack[] = "ACK";
+    Wire.write((const uint8_t*)ack, sizeof(ack) - 1);  // Send ACK
+    Serial.print("Sent ACK, length: ");
+    Serial.println(sizeof(ack) - 1);
 }
 
 void onReceive(int len){
@@ -26,6 +28,7 @@ void setup() {
   Serial.begin(115200);
   Serial.setDebugOutput(true);
   Serial.println("I2C Slave");
+  Serial.println(WiFi.macAddress());
   Wire.onReceive(onReceive);
   Wire.onRequest(onRequest);
   Wire.begin((uint8_t)I2C_DEV_ADDR, SDA, SCL, 100000);
@@ -41,5 +44,5 @@ void setup() {
 }
 
 void loop() {
-
+  
 }

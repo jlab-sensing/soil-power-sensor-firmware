@@ -2,18 +2,23 @@
  ******************************************************************************
  * @file     i2c_secondary.hpp
  * @author   Varun Sreedharan
- * @brief    This file contains all the driver functions for i2c secondary communication with
+ * @brief    This file contains all the driver functions for I2C secondary communication with
  *           STM32 board
  *
  * @date     5/1/2024
  ******************************************************************************
  */
-#ifndef I2C_SLAVE_HPP
-#define I2C_SLAVE_HPP
-#define MAX_BUFFER_SIZE 242
+#ifndef I2C_SECONDARY_HPP
+#define I2C_SECONDARY_HPP
 
 #include <Arduino.h>
 #include <Wire.h>
+
+// Define the I2C device address and pin numbers for SDA and SCL
+#define I2C_DEV_ADDR 0x6B
+#define SCL_PIN 1        // Set your SCL pin number here
+#define SDA_PIN 0        // Set your SDA pin number here
+#define MAX_BUFFER_SIZE 242
 
 // Define error codes for I2C operations
 typedef enum {
@@ -24,9 +29,9 @@ typedef enum {
 
 /**
 ******************************************************************************
-* @brief    Initializes the SDI-12 data line.
-*           This function configures the GPIO pin used for the SDI-12 data line.
-* 
+* @brief    Initializes the I2C communication.
+*           This function configures the GPIO pins used for I2C data lines and sets up the I2C interface.
+*
 * @return   void
 ******************************************************************************
 */
@@ -46,7 +51,7 @@ void onRequest();
 ******************************************************************************
 * @brief    Handles the reception of data over the I2C bus.
 *           This function processes the incoming data once a reception event occurs.
-* 
+*
 * @param    int len: Number of bytes expected to receive.
 * @return   void
 ******************************************************************************
@@ -103,4 +108,4 @@ i2c_error_t getI2CError();
 */
 void clearI2CError();
 
-#endif // I2C_SLAVE_HPP
+#endif // I2C_SECONDARY_HPP

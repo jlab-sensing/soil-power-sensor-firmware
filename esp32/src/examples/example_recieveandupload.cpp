@@ -6,51 +6,78 @@
  */
 
 #include <Arduino.h>
+#include <Wire.h>
 #include <WiFi.h>
 
 #include "dirtviz.hpp"
-#include "i2c_secondary.hpp"
 
-/** Baud rate for serial interface */
-#define SERIAL_BAUD 115200
+#define I2C_DEV_ADDR 0x6B
+#define SCL 1
+#define SDA 0
 
-const char ssid[] = "yourssid";
-const char pass[] = "yourpassword";
+const char ssid[] = "ResWiFi-Devices";
+const char pass[] = "RbRr2V7X3h288qScPg";
+const char serverIp[] = "100.64.27.220";  // Your computer's IP address
+const uint16_t serverPort = 8080;
 
-Dirtviz api("yourip", 8080);
+Dirtviz api(serverIp, serverPort);
+
+uint8_t i2cReceiveBuffer[256];  // Buffer to store I2C data
+size_t i2cReceiveLength = 0;
+
+void onRequest() {
+    const char ack[] = "ACK";
+    Wire.write((const uint8_t*)ack, sizeof(ack) - 1);
+    Serial.println("Sent ACK");
+}
+
+void onReceive(int numBytes) {
+    if (numBytes > sizeof(i2cReceiveBuffer)) {
+        Serial.println("Error: Buffer overflow");
+        return;
+    }
+
+    i2cReceiveLength = 0;
+    while (Wire.available()) {
+        if (i2cReceiveLength < numBytes) {
+            i2cReceiveBuffer[i2cReceiveLength++] = Wire.read();
+        }
+    }
+
+    Serial.print("Received: ");
+    for (size_t i = 0; i < i2cReceiveLength; i++) {
+        Serial.print(i2cReceiveBuffer[i], HEX);
+        Serial.print(" ");
+    }
+    Serial.println();
+
+    // Send the received data over WiFi
+    if (WiFi.status() == WL_CONNECTED) {
+        int respCode = api.SendMeasurement(i2cReceiveBuffer, i2cReceiveLength);
+        Serial.print("Response Code: ");
+        Serial.println(respCode);
+    } else {
+        Serial.println("WiFi not connected, data not sent.");
+    }
+}
 
 void setup() {
     Serial.begin(115200);
-    // Wait for serial connection
-    while (!Serial) { 
-        delay(100); 
-    }
     WiFi.begin(ssid, pass);
-    // Wait for WiFi to connect
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
-
-    Serial.println("");
-    Serial.println("Connected!");
+    Serial.println("\nWiFi Connected!");
+    Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
-    initI2C(); // Initialize I2C communication
+    Wire.onReceive(onReceive);
+    Wire.onRequest(onRequest);
+    Wire.begin((uint8_t)I2C_DEV_ADDR, SDA, SCL, 100000);
 
 }
 
 void loop() {
-    int resp_code;
-    const uint8_t *data;
-    size_t data_len;
-
-    // Fetch the data from the I2C buffer
-    data = returnDataBuffer();
-    data_len = getDataCount();
-
-    // Send the fetched data
-    api.SendMeasurement(data, data_len);
-
-    delay(1000);  // Adjust the delay as needed
-    resetDataBuffer();
+    // Handling of data reception and transmission is done in the onReceive function
+    delay(1000);  // Loop delay for stability
 }

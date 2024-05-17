@@ -48,6 +48,10 @@ i2c_error_t getI2CError() {
     return i2cLastError;
 }
 
+int getDataCount() {
+    return dataCount;
+}
+
 void clearI2CError() {
     i2cLastError = I2C_OK;
 }
