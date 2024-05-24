@@ -27,6 +27,18 @@ const GPIO_TypeDef* data_ready_port = GPIOC;
  */
 const uint16_t data_ready_pin = GPIO_PIN_0;
 
+
+const double positive_calibration_m = -0.000000390312083;
+const double positive_calibration_b = 6.587938661367422;
+const double negative_calibration_m = -0.000000395077453;
+const double negative_calibration_b = -0.06046705571518807;
+
+const double negative_3v_raw = 7840000.0;
+
+const double near_0v_raw = 16800000.0;
+const double positive_3v_raw = 8460000.0;
+
+
 int HAL_status(HAL_StatusTypeDef ret) {
   int status;
   if (ret == HAL_OK){
@@ -124,6 +136,9 @@ double ADC_readVoltage(void){
   // HAL_UART_Transmit(&huart1, (const uint8_t *) raw, 36, 19);
 
   //reading =  (VOLTAGE_SLOPE * reading) + VOLTAGE_B; // Calculated from linear regression
+  
+  reading = (positive_calibration_m * reading) + positive_calibration_b;
+
   return reading;
 }
 
@@ -173,12 +188,11 @@ size_t ADC_measure(uint8_t *data) {
   SysTime_t ts = SysTimeGet();
 
   // read voltage
-  int adc_voltage = ADC_readVoltage();
-  double adc_voltage_float = ((double) adc_voltage) / 1000.;
+  double voltage = ADC_readVoltage();
 
   // encode measurement
   size_t data_len = EncodePowerMeasurement(ts.Seconds, LOGGER_ID, CELL_ID,
-                                           adc_voltage_float, 0.0, data);
+                                           voltage, 0.0, data);
 
   // return number of bytes in serialized measurement 
   return data_len;
