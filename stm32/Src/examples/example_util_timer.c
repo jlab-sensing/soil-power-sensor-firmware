@@ -62,13 +62,6 @@ void onTransmitI2C(void *context) {
     UTIL_SEQ_SetTask((1 << CFG_SEQ_Task_TransmitI2C), CFG_SEQ_Prio_0);
 }
 
-void Error_Handler(void) {
-    /* User can add his own implementation to report the HAL error return state */
-    __disable_irq();
-    while (1) {
-    }
-}
-
 int main(void) {
     HAL_Init();
     SystemClock_Config();
