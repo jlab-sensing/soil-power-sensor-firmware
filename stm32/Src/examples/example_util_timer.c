@@ -25,6 +25,9 @@
 #include "flash_if.h"
 #include <stdio.h>
 
+
+void SystemClock_Config(void);
+
 typedef struct {
     uint8_t *data;
     size_t size;
@@ -59,38 +62,68 @@ void onTransmitI2C(void *context) {
     UTIL_SEQ_SetTask((1 << CFG_SEQ_Task_TransmitI2C), CFG_SEQ_Prio_0);
 }
 
-void Error_Handler(void) {
-    /* User can add his own implementation to report the HAL error return state */
-    __disable_irq();
-    while (1) {
-    }
-}
-
-
 int main(void) {
     HAL_Init();
     SystemClock_Config();
+    __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
+    /*Initialize timer and RTC*/
+    //UTIL_TIMER_Init();
     MX_GPIO_Init();
     MX_DMA_Init();
     MX_USART1_UART_Init();
     MX_I2C2_Init();
     SystemApp_Init();
 
-    // Send UART message
+    uint8_t address = 0x6B;  // I2C 7-bit address of the slave device
+
     char info_str[100];
-    sprintf(info_str, "I2C Master Controller initialized, compiled on %s %s\n", __DATE__, __TIME__);
-    HAL_UART_Transmit(&huart1, (uint8_t*)info_str, strlen(info_str), 1000);
+    int info_len = sprintf(info_str, "I2C Master Controller initialized, compiled on %s %s\n", __DATE__, __TIME__);
+    HAL_UART_Transmit(&huart1, (const uint8_t*)info_str, info_len, 1000);
 
-    // Register I2C transmission task
-    UTIL_SEQ_RegTask((1 << CFG_SEQ_Task_TransmitI2C), UTIL_SEQ_RFU, TransmitI2C);
+    uint8_t data[] = {0xa, 0xa, 0x8, 0x4, 0x10, 0x7, 0x18, 0xf0, 0xab, 0xe3, 0xac,
+                    0x5, 0x22, 0x12, 0x9, 0x14, 0xae, 0x47, 0xe1, 0x7a, 0x44,
+                    0x96, 0x40, 0x11, 0xcd, 0xcc, 0xcc, 0xcc, 0xcc, 0xa8, 0x9e,
+                    0x40};
 
-    // Create and start a timer for I2C transmission
-    UTIL_TIMER_Object_t i2cTimer;
-    UTIL_TIMER_Create(&i2cTimer, 10000, UTIL_TIMER_PERIODIC, onTransmitI2C, NULL);
-    UTIL_TIMER_Start(&i2cTimer);
+    //uint8_t data[] = {'H', 'e', 'l', 'l', 'o', '!'}; // The first byte is the number of subsequent data bytes
+    char output[100];
+    int output_len;
+    CFG_SEQ_Task_printHello;
+    void onPrintHello(void) {
+      UTIL_SEQ_SetTask((1 << CFG_SEQ_Task_printHello), CFG_SEQ_Prio_0);
+    }
 
+    void printHello(void) {
+      char hello_str[] = "hello\r\n";
+      HAL_UART_Transmit(&huart1, (const uint8_t*)hello_str, sizeof(hello_str) - 1, 1000);
+    }
+    UTIL_SEQ_RegTask((1 << CFG_SEQ_Task_printHello), UTIL_SEQ_RFU, printHello);
+    UTIL_TIMER_Object_t testTimer;
+    UTIL_TIMER_Create(&testTimer, 500, UTIL_TIMER_PERIODIC, onPrintHello, NULL);
+    UTIL_TIMER_Start(&testTimer);
     while (1) {
         UTIL_SEQ_Run(UTIL_SEQ_DEFAULT);
+        
+        /*HAL_StatusTypeDef result = I2C2_Transmit(address, data, sizeof(data));
+
+        if (result == HAL_OK) {
+            output_len = sprintf(output, "I2C Transmission successful.\n");
+        } else {
+            output_len = sprintf(output, "I2C Transmission failed, HAL status: %d\n", result);
+        }
+        HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
+
+        uint8_t* ackBuffer[3]; // Buffer to receive ACK
+        result = HAL_I2C_Master_Receive(&hi2c2, (uint16_t)(address << 1), ackBuffer, sizeof(ackBuffer), 1000);
+        if (result == HAL_OK && strncmp((char*)ackBuffer, "ACK", 3) == 0) {
+            output_len = sprintf(output, "ACK received.\n");
+        } else {
+            output_len = sprintf(output, "\nNo ACK received, HAL status: %d\n", result);
+        }
+        HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);
+        HAL_Delay(1000);  // Delay between transmissions
+        //output_len = sprintf(output, "I didn't crash\n");
+        //HAL_UART_Transmit(&huart1, (const uint8_t*)output, output_len, 1000);*/
     }
 }
 
