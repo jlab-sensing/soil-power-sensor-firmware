@@ -28,15 +28,10 @@ const GPIO_TypeDef* data_ready_port = GPIOC;
 const uint16_t data_ready_pin = GPIO_PIN_0;
 
 
-const double positive_calibration_m = -0.000000390312083;
-const double positive_calibration_b = 6.587938661367422;
-const double negative_calibration_m = -0.000000395077453;
-const double negative_calibration_b = -0.06046705571518807;
-
-const double negative_3v_raw = 7840000.0;
-
-const double near_0v_raw = 16800000.0;
-const double positive_3v_raw = 8460000.0;
+const double positive_calibration_a = 2.7367896394450347e-21;
+const double positive_calibration_b = -1.1242333948890462e-13;
+const double positive_calibration_c = 1.1026749338517883e-06;
+const double positive_calibration_d = 0.224739114677993;
 
 
 int HAL_status(HAL_StatusTypeDef ret) {
@@ -137,7 +132,7 @@ double ADC_readVoltage(void){
 
   //reading =  (VOLTAGE_SLOPE * reading) + VOLTAGE_B; // Calculated from linear regression
   
-  reading = (positive_calibration_m * reading) + positive_calibration_b;
+  reading = (positive_calibration_a * reading * reading * reading) + (positive_calibration_b * reading * reading) + (positive_calibration_c * reading) + positive_calibration_d;
 
   return reading;
 }
