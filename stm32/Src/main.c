@@ -127,7 +127,7 @@ int main(void)
   //SensorsAdd(SDI12_Teros12Measure);
   //SensorsAdd(Phytos31_measure);
 
-  // Store the initial buffer state in FRAM
+  // Store the buffer state in FRAM
   store_buffer_state(read_addr, write_addr, buffer_len);
 
   /* USER CODE END 2 */
@@ -177,7 +177,7 @@ void SystemClock_Config(void)
 
   /** Configure the SYSCLKSource, HCLK, PCLK1 and PCLK2 clocks dividers
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK3|RCC_HCLK
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK3|RCC_CLOCKTYPE_HCLK
                               |RCC_CLOCKTYPE_SYSCLK|RCC_CLOCKTYPE_PCLK1
                               |RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
