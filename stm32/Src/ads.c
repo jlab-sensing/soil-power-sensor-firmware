@@ -14,6 +14,11 @@
 
 #include <stm32wlxx_hal_gpio.h>
 
+const double a = 0.00000000000000000000495243555;
+const double b = -0.000000000000203266305;
+const double c = 0.00000232731172;
+const double d = -5.20629796;
+
 /**
  * @brief GPIO port for adc data ready line
  * 
@@ -124,6 +129,7 @@ double ADC_readVoltage(void){
   // HAL_UART_Transmit(&huart1, (const uint8_t *) raw, 36, 19);
 
   //reading =  (VOLTAGE_SLOPE * reading) + VOLTAGE_B; // Calculated from linear regression
+  reading = (a * reading * reading * reading) + (b * reading * reading) + (c * reading) + d;
   return reading;
 }
 
