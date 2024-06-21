@@ -34,7 +34,7 @@ size_t Phytos31_measure(uint8_t *data) {
 
   // read voltage
   measurment = Phytos31GetMeasurment();
-  double adc_voltage_float = ((double) measurment.phytos31_raw) / 1000.;
+  double adc_voltage_float = ((double) measurment.phytos31_raw);
 
   // encode measurement
   size_t data_len = EncodePhytos31Measurement(ts.Seconds, LOGGER_ID, CELL_ID,
