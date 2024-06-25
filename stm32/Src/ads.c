@@ -14,10 +14,11 @@
 
 #include <stm32wlxx_hal_gpio.h>
 
-const double a = 0.00000000000000000000316426188;
-const double b = -0.000000000000125152862;
-const double c = 0.00000121088224;
-const double d = -0.00329348451;
+const double a = -0.00000000000000000000182237185;
+const double b = 0.0000000000000777500996;
+const double c = -0.000000776155053;
+const double d = 2.62163558;
+
 
 /**
  * @brief GPIO port for adc data ready line

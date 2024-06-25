@@ -3,7 +3,7 @@
 
 #define LOGGER_ID 200
 
-#define CELL_ID 149
+#define CELL_ID 146
 
 #ifdef __cplusplus
 extern "C"
