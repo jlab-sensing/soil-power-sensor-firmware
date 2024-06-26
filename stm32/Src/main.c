@@ -37,6 +37,7 @@
 #include "ads.h"
 #include "sdi12.h"
 #include "phytos31.h"
+#include "bme280_sensor.h"
 #include "rtc.h"
 #include "sensors.h"
 /* USER CODE END Includes */
@@ -117,9 +118,12 @@ int main(void)
   APP_PRINTF("Soil Power Sensor Wio-E5 firmware, compiled on %s %s\n", __DATE__, __TIME__);
 
   // configure sensors
-  SensorsAdd(ADC_measure);
+  //SensorsAdd(ADC_measure);
   //SensorsAdd(SDI12_Teros12Measure);
   //SensorsAdd(Phytos31_measure);
+
+  BME280Init();
+  SensorsAdd(BME280Measure); 
 
 
   /* USER CODE END 2 */

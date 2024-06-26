@@ -52,6 +52,15 @@ message Phytos31Measurement {
   double leaf_wetness = 2;
 }
 
+message BME280Measurement {
+  // pressure
+  uint32 pressure = 1;
+  // temperature
+  int32 temperature = 2;
+  // humidity
+  uint32 humidity = 3;
+}
+
 /* Top level measurement message */
 message Measurement {
   // Metadata
@@ -62,6 +71,7 @@ message Measurement {
     PowerMeasurement power = 2;
     Teros12Measurement teros12 = 3;
     Phytos31Measurement phytos31 = 4;
+    BME280Measurement bme280 = 5;
   }
 }
 

@@ -43,7 +43,7 @@ extern "C"{
 
 #ifndef MEASUREMENT_PERIOD
 /** The amount of time between measurements */
-#define MEASUREMENT_PERIOD 10000
+#define MEASUREMENT_PERIOD 15000
 #endif /* MEASUREMENT_PERIOD */
 
 /**
