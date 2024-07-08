@@ -1,14 +1,15 @@
 /**
+ * Copyright 2024 jLab
  * @file battery.c 
  * 
  * @author John Madden <jmadden173@pm.me>
  * @date 2023-11-16
 */
 
-#include "main.h"
-#include "adc.h"
+#include "../../../Inc/main.h"
+#include "../../../Inc/adc.h"
 
-#include "battery.h"
+#include "../include/battery.h"
 
 /** Voltage reference in mV */
 #define VOLTAGE_REF 3300
@@ -24,8 +25,7 @@
 /** Private variable that stores battery voltage */
 volatile uint32_t adc_reading = 0;
 
-HAL_StatusTypeDef battery_init(void)
-{
+HAL_StatusTypeDef battery_init(void) {
   // Calibrate and start conversion process
   rc = HAL_ADCEx_Calibration_Start(&hadc);
   if (rc != HAL_OK) Error_Handler();
@@ -37,8 +37,7 @@ HAL_StatusTypeDef battery_init(void)
   return rc;
 }
 
-unsigned int battery_voltage(void)
-{
+unsigned int battery_voltage(void) {
   // Adjust to real voltage value
   unsigned int voltage = (unsigned int) adc_reading << 1;
   voltage *= VOLTAGE_REF;

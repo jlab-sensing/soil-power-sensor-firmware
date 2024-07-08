@@ -1,4 +1,5 @@
 /**
+ * Copyright 2024 jLab
  * @brief Library used to interface with the Dirtviz API
  * 
  * Assumes that WiFi interface is connected to the network.
@@ -6,6 +7,9 @@
  * @author John Madden <jmadden173@pm.me>
  * @date 2023-11-29
 */
+
+#ifndef LIB_DIRTVIZ_INCLUDE_DIRTVIZ_HPP_
+#define LIB_DIRTVIZ_INCLUDE_DIRTVIZ_HPP_
 
 #include <cstdlib>
 #include <cstdio>
@@ -17,9 +21,8 @@
 /**
  * @brief HTTP interface for Dirtviz API
 */
-class Dirtviz
-{
-private:
+class Dirtviz {
+ private:
   /** URL of API */
   char *url = nullptr;
 
@@ -30,7 +33,7 @@ private:
   char *response = nullptr;
 
 
-public:
+ public:
   /**
    * @brief Default constructor
    * 
@@ -99,3 +102,5 @@ public:
   */
   size_t GetResponse(const uint8_t *data) const;
 };
+
+#endif  // LIB_DIRTVIZ_INCLUDE_DIRTVIZ_HPP_

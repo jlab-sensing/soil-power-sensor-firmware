@@ -1,4 +1,5 @@
 /**
+ * Copyright 2024 jLab
  * @file battery.h
  * @brief Provides declarations for battery monitoring interface.
  * 
@@ -8,8 +9,8 @@
  * @date 2023-11-16
 */
 
-#ifndef __BATTERY_H__
-#define __BATTERY_H__
+#ifndef STM32_LIB_BATTERY_INCLUDE_BATTERY_H_
+#define STM32_LIB_BATTERY_INCLUDE_BATTERY_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,4 +38,4 @@ unsigned int battery_voltage(void);
 }
 #endif
 
-#endif /* __BATTERY_H__*/
+#endif  // STM32_LIB_BATTERY_INCLUDE_BATTERY_H_

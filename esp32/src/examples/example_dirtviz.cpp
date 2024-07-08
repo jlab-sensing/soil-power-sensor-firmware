@@ -1,4 +1,5 @@
 /**
+ * Copyright 2024 jLab
  * @brief Example of using dirtviz library
  * 
  * @author John Madden <jmadden173@pm.me>
@@ -8,7 +9,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
-#include "dirtviz.hpp"
+#include "../lib/dirtviz/include/dirtviz.hpp"
 
 /** Baud rate for serial interface */
 #define SERIAL_BAUD 115200
@@ -26,8 +27,7 @@ const size_t data_len = 21;
  * 
  * 
 */
-void setup()
-{
+void setup() {
   // Start serial interface
   Serial.begin(115200);
   // Wait for serial connection
@@ -43,8 +43,7 @@ void setup()
   WiFi.begin(ssid, pass);
 
   // Wait for WiFi to connect
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
@@ -54,8 +53,7 @@ void setup()
   Serial.println(WiFi.localIP());
 }
 
-void loop()
-{
+void loop() {
   int resp_code;
 
   const uint8_t *resp_data;

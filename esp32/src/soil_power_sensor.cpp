@@ -1,4 +1,5 @@
 /**
+ * Copyright 2024 jLab
  * @brief Main file for the Soil Power Sensor firmware
  * 
  * @author John Madden <jmadden173@pm.me>
@@ -8,13 +9,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
-#include "dirtviz.hpp"
+#include "../lib/dirtviz/include/dirtviz.hpp"
 
 /** Baud rate for serial interface */
 #define SERIAL_BAUD 115200
 
-const char ssid[] = "ResWiFi-Devices";
-const char pass[] = "RbRr2V7X3h288qScPg";
+const char ssid[] = "enter-network-here";
+const char pass[] = "enter-password-here";
 
 Dirtviz api("dirtviz.jlab.ucsc.edu", 443);
 
@@ -26,8 +27,7 @@ const size_t data_len = 12;
  * 
  * 
 */
-void setup()
-{
+void setup() {
   // Start serial interface
   Serial.begin(115200);
   // Wait for serial connection
@@ -43,8 +43,7 @@ void setup()
   WiFi.begin(ssid, pass);
 
   // Wait for WiFi to connect
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
@@ -54,8 +53,7 @@ void setup()
   Serial.println(WiFi.localIP());
 }
 
-void loop()
-{
+void loop() {
   // Buffer to store response
   static uint8_t resp[256];
   static size_t resp_len;
@@ -65,5 +63,5 @@ void loop()
 
   // Print response
   Serial.print("Response:");
-  Serial.println((char*) resp);
+  Serial.println(reinterpret_cast<char*>(resp));
 }

@@ -1,4 +1,5 @@
 /**
+ * Copyright 2024 jLab
  * @file test_battery.c
  * @brief Prints out battery voltage levels
  * 
@@ -10,13 +11,12 @@
  * @date 2023-11-17
 */
 
+#include <stdio.h>
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
 #include "usart.h"
 #include "gpio.h"
-
-#include <stdio.h>
 
 #include "battery.h"
 
@@ -26,7 +26,7 @@
 #endif
 
 void SystemClock_Config(void);
-  
+
 /** Global variable for all return codes */
 HAL_StatusTypeDef rc;
 
@@ -34,9 +34,8 @@ HAL_StatusTypeDef rc;
   * @brief Entry point for battery test
   * @retval int
   */
-int main(void)
-{
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+int main(void) {
+  /* Resets all peripherals, Inits the Flash interface and the Systick. */
   HAL_Init();
 
   /* Configure the system clock */
@@ -54,19 +53,17 @@ int main(void)
   // Print the compilation time at startup
   char info_str[128];
   int info_len;
-  info_len = sprintf(
+  info_len = snprintf(
     info_str,
     "Soil Power Sensor Wio-E5 firmware, test: %s, compiled on %s %s\n",
-    __FILE__, __DATE__, __TIME__
-    );
+    __FILE__, __DATE__, __TIME__);
   HAL_UART_Transmit(&huart1, (const uint8_t *) info_str, info_len, 1000);
 
   // Infinite loop
-  while (1)
-  {
+  while (1) {
     // Print voltage level
     char buf[32];
-    int buf_len = sprintf(buf, "Battery Voltage: %d mV\n", battery_voltage());
+    int buf_len = snprintf(buf, "Battery Voltage: %d mV\n", battery_voltage());
     HAL_UART_Transmit(&huart1, (const uint8_t *) buf, buf_len, 1000);
 
     // Sleep
@@ -78,8 +75,7 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
-{
+void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
@@ -96,8 +92,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
     Error_Handler();
   }
 
@@ -112,8 +107,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.AHBCLK3Divider = RCC_SYSCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
-  {
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK) {
     Error_Handler();
   }
   HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_SYSCLK, RCC_MCODIV_1);
@@ -127,20 +121,18 @@ void SystemClock_Config(void)
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-void Error_Handler(void)
-{
+void Error_Handler(void) {
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
 
 
   /* USER CODE BEGIN Error_Handler_Debug */
   char error[30];
-  int error_len = sprintf(error, "Error!  HAL Status: %d\n", rc);
+  int error_len = snprintf(error, "Error!  HAL Status: %d\n", rc);
   HAL_UART_Transmit(&huart1, (const uint8_t *) error, error_len, 1000);
 
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1)
-  {
+  while (1) {
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -153,8 +145,7 @@ void Error_Handler(void)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t *file, uint32_t line)
-{
+void assert_failed(uint8_t *file, uint32_t line) {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
