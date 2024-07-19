@@ -53,12 +53,19 @@ void ReceiveACK(void) {
     int output_len;
 
     // Handle ACK reception
-    uint8_t ackBuffer[3]; // Buffer to receive ACK
+    uint8_t ackBuffer[16]; // Buffer to receive ACK, increased size for longer messages
     HAL_StatusTypeDef result = HAL_I2C_Master_Receive(&hi2c2, address, ackBuffer, sizeof(ackBuffer), 1000);
-    if (result == HAL_OK && strncmp((char*)ackBuffer, "ACK", 3) == 0) {
-        output_len = sprintf(output, "ACK received.\n");
+    if (result == HAL_OK) {
+        if (strncmp((char*)ackBuffer, "ACK", 3) == 0) {
+            output_len = sprintf(output, "ACK received.\n");
+        } else if (strncmp((char*)ackBuffer, "STORE_LOCALLY", 13) == 0) {
+            // Instead of storing locally, print a message
+            output_len = sprintf(output, "Received STORE_LOCALLY ack, storing data locally (simulated).\n");
+        } else {
+            output_len = sprintf(output, "Received unexpected ACK: %s\n", ackBuffer);
+        }
     } else {
-        output_len = sprintf(output, "\nNo ACK received, HAL status: %d\n", result);
+        output_len = sprintf(output, "No ACK received, HAL status: %d\n", result);
     }
     HAL_UART_Transmit(&huart1, (uint8_t*)output, output_len, 1000);
 }

@@ -77,6 +77,7 @@ void runStateMachine(void) {
     taskRunning = false;
 }
 
+
 int main(void) {
     HAL_Init();
     SystemClock_Config();
@@ -100,7 +101,7 @@ int main(void) {
 
     // Create and start a timer for I2C transmission
     UTIL_TIMER_Object_t i2cTimer;
-    UTIL_TIMER_Create(&i2cTimer, 2000, UTIL_TIMER_PERIODIC, onTransmitI2C, NULL);
+    UTIL_TIMER_Create(&i2cTimer, 4000, UTIL_TIMER_PERIODIC, onTransmitI2C, NULL);
     UTIL_TIMER_Start(&i2cTimer);
 
     while (1) {

@@ -60,7 +60,7 @@ int Dirtviz::SendMeasurement(const uint8_t *meas, size_t meas_len) {
     char buffer[100];
     Serial.print(this->url);
     Serial.print(":");
-    Serial.print(this->port);
+    Serial.println(this->port);
 
     // try connection return negative length if error
     // client.setInsecure();
