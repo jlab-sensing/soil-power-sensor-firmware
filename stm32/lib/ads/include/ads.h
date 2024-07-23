@@ -6,25 +6,24 @@
  *           the ads.c file
  * @date     11/27/2023
  ******************************************************************************
- * Copyright [2023] <Stephen Taylor>
  */
 
-#ifndef STM32_LIB_ADS_INCLUDE_ADS_H_
-#define STM32_LIB_ADS_INCLUDE_ADS_H_
+#ifndef __ADS_H__
+#define __ADS_H__
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"{
 #endif
 
 #include <stdio.h>
 
-#include "../Inc/i2c.h"
-#include "../Inc/usart.h"
-#include "../../../../../.platformio/packages/framework-stm32cubewl/Utilities/misc/stm32_systime.h"
+#include "i2c.h"
+#include "usart.h"
+#include "stm32_systime.h"
 
-#include "../Inc/user_config.h"
-#include "../Inc/timestamp.h"
-#include "../../proto/c/include/transcoder.h"
+#include "user_config.h"
+#include "timestamp.h"
+#include "transcoder.h"
 
 #define ADS12_WRITE 0x80
 #define ADS12_READ 0x81
@@ -33,8 +32,8 @@ extern "C" {
 #define ADS12_RESET_CODE 0x06
 #define ADS12_READ_DATA_CODE 0x10
 
-#define VOLTAGE_SLOPE -0.1  // Change to slope o/p from the linear_regression.py
-#define VOLTAGE_B 6575  // Change to the b output from the linear_regression.py
+#define VOLTAGE_SLOPE -0.1 // Change this to the slope output from the linear_regression.py file
+#define VOLTAGE_B 6575 // Change this to the b output from the linear_regression.py file
 
 #define CURRENT_SLOPE 0
 #define CURRENT_B 0
@@ -116,6 +115,6 @@ size_t ADC_measure(uint8_t *data);
 }
 #endif
 
-#endif  // STM32_LIB_ADS_INCLUDE_ADS_H_
+#endif /* __ADS_H__ */
 
 /* USER CODE END 1 */
