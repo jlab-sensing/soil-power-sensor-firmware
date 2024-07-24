@@ -20,10 +20,34 @@
  * MEASUREMENT_PERIOD defines the amount of time between measurements. This
  * value should be an order of magnitude greater than the upload frequency that
  * is defined by APP_TX_DUTY_CYCLE.
+ * 
+ * @copyright
+ * 
+ * MIT License
+ * 
+ * Copyright (c) 2024 jLab in Smart Sensing at UCSC
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
-#ifndef __USER_SENSORS_H__
-#define __USER_SENSORS_H__
+#ifndef LIB_SENSORS_INCLUDE_SENSORS_H_
+#define LIB_SENSORS_INCLUDE_SENSORS_H_
 
 #include "stm32_seq.h"
 #include "stm32_timer.h"
@@ -33,7 +57,7 @@
 #include "fifo.h"
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
 #ifndef MAX_SENSORS
@@ -86,4 +110,4 @@ int SensorsAdd(SensorsPrototypeMeasure cb);
 }
 #endif
 
-#endif // __USER_SENSORS_H__
+#endif  // LIB_SENSORS_INCLUDE_SENSORS_H_

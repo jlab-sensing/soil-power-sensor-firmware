@@ -4,6 +4,29 @@
  * @brief See sensors.h
  * @date 2024-04-01
  * 
+ * @copyright
+ * 
+ * MIT License
+ * 
+ * Copyright (c) 2024 jLab in Smart Sensing at UCSC
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
  */
 
 #include "sensors.h"
@@ -14,7 +37,7 @@ static SensorsPrototypeMeasure callback_arr[MAX_SENSORS];
 /** Length of @ref callback_arr */
 static unsigned int callback_arr_len = 0;
 
-static const uint8_t buffer_size = LORAWAN_APP_DATA_BUFFER_MAX_SIZE;
+static const uint8_t kBufferSize = LORAWAN_APP_DATA_BUFFER_MAX_SIZE;
 
 /** Periodic timer for querying sensors */
 static UTIL_TIMER_Object_t MeasureTimer;
@@ -56,9 +79,8 @@ void SensorsStop(void) {
   UTIL_TIMER_Stop(&MeasureTimer);
 }
 
-int SensorsAdd(SensorsPrototypeMeasure cb)
-{
-  // check for out of range error 
+int SensorsAdd(SensorsPrototypeMeasure cb) {
+  // check for out of range error
   if (callback_arr_len >= MAX_SENSORS) {
     APP_LOG(TS_OFF, VLEVEL_M, "Error: Too many sensors added!\r\n");
     return -1;
@@ -73,7 +95,7 @@ int SensorsAdd(SensorsPrototypeMeasure cb)
 
 void SensorsMeasure(void) {
   // buffer to store measurements
-  uint8_t buffer[buffer_size];
+  uint8_t buffer[kBufferSize];
   size_t buffer_len;
 
   // loop over callbacks
@@ -87,15 +109,14 @@ void SensorsMeasure(void) {
       APP_LOG(TS_OFF, VLEVEL_M, "%x", buffer[j]);
     }
     APP_LOG(TS_OFF, VLEVEL_M, "\r\n");
-    
+
     // add to tx buffer
     FramStatus status = FramPut(buffer, buffer_len);
     if (status == FRAM_BUFFER_FULL) {
       APP_LOG(TS_OFF, VLEVEL_M, "Error: TX Buffer full!\r\n");
-    }
-    else if (status != FRAM_OK) {
+    } else if (status != FRAM_OK) {
       APP_LOG(TS_OFF, VLEVEL_M, "Error: General FRAM buffer!\r\n");
-    } 
+    }
   }
 }
 
