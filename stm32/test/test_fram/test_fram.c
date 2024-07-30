@@ -1,3 +1,5 @@
+// Copyright 2023 UCSC
+
 /**
  * @file test_fram.c
  * @brief Tests the fram library
@@ -6,11 +8,11 @@
 #include <stdio.h>
 #include <unity.h>
 
-#include "main.h"
-#include "i2c.h"
-#include "usart.h"
-#include "gpio.h"
-#include "fram.h"
+#include "Inc/main.h"
+#include "Inc/i2c.h"
+#include "Inc/usart.h"
+#include "Inc/gpio.h"
+#include "include/fram.h"
 
 void setUp(void) {}
 
@@ -19,7 +21,7 @@ void setUp(void) {}
 */
 void tearDown(void) {}
 
-void test_i2c(void){
+void test_i2c(void) {
   uint8_t test = 185;
   uint8_t received;
 
@@ -65,7 +67,7 @@ void test_FramWrite_ZeroLength(void) {
 }
 
 void test_FramWrite_MultiplePages(void) {
-  uint8_t data [] = {1, 2, 3, 4, 5};
+  uint8_t data[] = {1, 2, 3, 4, 5};
   // right below the segment size
   uint16_t addr = FRAM_SEG_SIZE-1;
 
@@ -118,11 +120,11 @@ void test_FramRead_MultiplePages(void) {
   // right below the segment size
   uint16_t addr = FRAM_SEG_SIZE-1;
 
-  uint8_t write_data[] = {1, 2, 3, 4, 5}; 
+  uint8_t write_data[] = {1, 2, 3, 4, 5};
   FramWrite(addr, write_data, sizeof(write_data));
 
   uint8_t read_data[5];
-  FramStatus status = FramRead(addr, sizeof(read_data), read_data);  
+  FramStatus status = FramRead(addr, sizeof(read_data), read_data);
 
   TEST_ASSERT_EQUAL(FRAM_OK, status);
   TEST_ASSERT_EQUAL_UINT8_ARRAY(write_data, read_data, 5);
@@ -151,11 +153,11 @@ int main(void)
   RUN_TEST(test_i2c);
   RUN_TEST(test_FramWrite_ValidData);
   RUN_TEST(test_FramWrite_ZeroLength);
-  RUN_TEST(test_FramWrite_OutOfRange); 
+  RUN_TEST(test_FramWrite_OutOfRange);
   RUN_TEST(test_FramWrite_MultiplePages);
   RUN_TEST(test_FramRead_ValidData);
   RUN_TEST(test_FramRead_ZeroLength);
-  RUN_TEST(test_FramRead_OutOfRange); 
+  RUN_TEST(test_FramRead_OutOfRange);
   RUN_TEST(test_FramRead_MultiplePages);
   UNITY_END();
 }

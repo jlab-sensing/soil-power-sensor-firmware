@@ -1,3 +1,5 @@
+// Copyright 2023 jLab, UCSC
+
 /**
  * @file    fifo.c
  * @author  Stephen Taylor
@@ -6,7 +8,7 @@
  * @see fifo.h
  **/
 
-#include "fifo.h"
+#include "include/fifo.h"
 
 static uint16_t read_addr = FRAM_BUFFER_START;
 static uint16_t write_addr = FRAM_BUFFER_START;
@@ -36,18 +38,15 @@ static inline void update_addr(uint16_t *addr, const uint16_t num_bytes) {
 static uint16_t get_remaining_space(void) {
   uint16_t space_used = 0;
   if (write_addr > read_addr) {
-    space_used = write_addr - read_addr;  
-  }
-  else if (write_addr < read_addr) {
+    space_used = write_addr - read_addr;
+  } else if (write_addr < read_addr) {
     space_used = fram_buffer_size - (read_addr - write_addr);
-  }
-  else {
+  } else {
     // if anything is stored in buffer than entire capacity is used
     // otherwise buffer is empty and all free space is available
     if (buffer_len > 0) {
       space_used = fram_buffer_size;
-    }
-    else {
+    } else {
       space_used = 0;
     }
   }
@@ -97,7 +96,6 @@ FramStatus FramGet(uint8_t *data, uint8_t *len) {
     return status;
   }
   update_addr(&read_addr, 1);
-  
 
   // Read data from FRAM circular buffer
   status = FramRead(read_addr, *len, data);

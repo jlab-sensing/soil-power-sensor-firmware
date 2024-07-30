@@ -1,4 +1,13 @@
-#include "fram.h"
+// Copyright 2023 UCSC
+
+/**
+ * @file     fram.c
+ * @author   Stephen Taylor
+ * @brief    This file contains all the function definitions for the fram library. 
+ * 
+ * Copyright 2023 jLab, UCSC MIT License
+ */
+#include "include/fram.h"
 
 /** Timeout in seconds for the FRAM chip */
 const uint32_t fram_timeout = 100;
@@ -13,8 +22,7 @@ const uint16_t fram_read_mask = 0b1;
 const uint16_t fram_write_mask = 0b0;
 
 /** Matrix representation of memory */
-typedef struct
-{
+typedef struct {
   /** Page reference */
   uint16_t page;
   /** Segment address */
@@ -31,8 +39,7 @@ typedef struct
  */
 FramAddress FramConvertAddrMem(uint16_t addr);
 
-FramStatus FramWrite(uint16_t addr, const uint8_t *data, uint8_t len)
-{
+FramStatus FramWrite(uint16_t addr, const uint8_t *data, uint8_t len) {
   // Write byte array to memory
   // NOTE write is performed a single byte at a time due to address
   // configuration of the chip.
@@ -45,7 +52,7 @@ FramStatus FramWrite(uint16_t addr, const uint8_t *data, uint8_t len)
       return FRAM_OUT_OF_RANGE;
     }
 
-    // format the i2c address 
+    // format the i2c address
     uint16_t i2c_addr = fram_i2c_addr | (addr_mat.page << 1) | fram_write_mask;
 
     // Write byte to an address
@@ -54,7 +61,6 @@ FramStatus FramWrite(uint16_t addr, const uint8_t *data, uint8_t len)
     HAL_StatusTypeDef status;
     status = HAL_I2C_Mem_Write(&hi2c2, i2c_addr, addr_mat.seg,
                                I2C_MEMADD_SIZE_8BIT, d, 1, fram_timeout);
-    
     // return error if failed to write
     if (status != HAL_OK) {
       return FRAM_ERROR;
@@ -67,8 +73,7 @@ FramStatus FramWrite(uint16_t addr, const uint8_t *data, uint8_t len)
   return FRAM_OK;
 }
 
-FramStatus FramRead(uint16_t addr, uint8_t len, uint8_t *data)
-{
+FramStatus FramRead(uint16_t addr, uint8_t len, uint8_t *data) {
   // Write byte array to memory
   // NOTE write is performed a single byte at a time due to address
   // configuration of the chip.
@@ -79,7 +84,7 @@ FramStatus FramRead(uint16_t addr, uint8_t len, uint8_t *data)
     if (addr_mat.page >= FRAM_PAGES) {
       return FRAM_OUT_OF_RANGE;
     }
-    // format the i2c address 
+    // format the i2c address
     uint16_t i2c_addr = fram_i2c_addr | (addr_mat.page << 1) | fram_read_mask;
 
     // Read byte to data address
@@ -99,26 +104,23 @@ FramStatus FramRead(uint16_t addr, uint8_t len, uint8_t *data)
   return FRAM_OK;
 }
 
-HAL_StatusTypeDef ConfigureSettings(configuration c)
-{
+HAL_StatusTypeDef ConfigureSettings(configuration c) {
   HAL_StatusTypeDef status = HAL_OK;
 
-  // TODO implement user config write
+  // TODO(GSOC student) implement user config write
 
   return status;
 }
 
-configuration ReadSettings(void)
-{
+configuration ReadSettings(void) {
   configuration c;
 
-  // TODO implement user config read
+  // TODO(GSOC student) implement user config read
 
   return c;
 }
 
-FramAddress FramConvertAddrMem(uint16_t addr)
-{
+FramAddress FramConvertAddrMem(uint16_t addr) {
   // convert flat address space to matrix
   FramAddress addr_mat;
   addr_mat.page = addr / FRAM_SEG_SIZE;

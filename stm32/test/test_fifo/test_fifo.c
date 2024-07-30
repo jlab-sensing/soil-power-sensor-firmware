@@ -1,3 +1,4 @@
+// Copyright 2023 UCSC
 /**
  * @file test_fifo.c
  * @brief Tests the fifo circular buffer library
@@ -6,11 +7,11 @@
 #include <stdio.h>
 #include <unity.h>
 
-#include "main.h"
-#include "i2c.h"
-#include "usart.h"
-#include "gpio.h"
-#include "fifo.h"
+#include "Inc/main.h"
+#include "Inc/i2c.h"
+#include "Inc/usart.h"
+#include "Inc/gpio.h"
+#include "include/fifo.h"
 
 
 void setUp(void) {
@@ -30,6 +31,7 @@ void test_FramPut_ValidData(void) {
 
 void test_FramPut_BufferFull(void) {
   // Data size is larger than the buffer size
+  uint16_t full_buffer_size = fram_buffer_size + 1;
   uint8_t data[fram_buffer_size + 1];
 
   FramStatus status = FramPut(data, sizeof(data));
@@ -58,7 +60,7 @@ void test_FramPut_Sequential(void) {
 void test_FramPut_Sequential_BufferFull(void) {
   // starting values
   uint8_t data[9] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-  
+
   const int niters = fram_buffer_size / (sizeof(data)+1);
 
   // write 100 times, therefore 1100 bytes (data + len)
@@ -124,7 +126,7 @@ void test_FramGet_Sequential(void) {
     TEST_ASSERT_EQUAL(FRAM_OK, status_get);
     TEST_ASSERT_EQUAL_INT(10, get_data_len);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(put_data, get_data, sizeof(put_data));
-    
+
     // increment index of data
     for (int j = 0; j < sizeof(put_data); j++) {
       put_data[j]++;
@@ -154,7 +156,6 @@ void test_FramGet_Sequential_BufferFull(void) {
   // try writing data
   status = FramPut(data, sizeof(data));
   TEST_ASSERT_EQUAL(FRAM_BUFFER_FULL, status);
-  
   // reset data
   for (int i = 0; i < sizeof(data); i++) {
     data[i] = i;
@@ -215,13 +216,13 @@ void test_FramBuffer_Wraparound(void) {
   const uint16_t half_num_bytes = fram_buffer_size / 2;
 
   const uint8_t zeros[fram_buffer_size];
-  
+
   uint8_t buffer[sizeof(zeros)];
 
   // move write to roughly halfway point
   for (int i = 0; i < (half_num_bytes / block_size); i++) {
     status = FramPut(zeros, block_size);
-    TEST_ASSERT_EQUAL(FRAM_OK, status); 
+    TEST_ASSERT_EQUAL(FRAM_OK, status);
   }
 
   while (FramBufferLen() != 0) {
@@ -246,11 +247,12 @@ void test_FramBuffer_Wraparound(void) {
   * @brief  The application entry point.
   * @retval int
   */
-int main(void)
+int main(void) 
 {
   /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  /* Reset of all peripherals, Initializes the Flash interface 
+  and the Systick. */
   HAL_Init();
 
   /* USER CODE BEGIN Init */

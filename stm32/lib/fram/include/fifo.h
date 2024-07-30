@@ -1,3 +1,5 @@
+// Copyright 2023 UCSC
+
 /**
  * @file     fifo.h
  * @author   Stephen Taylor
@@ -19,18 +21,18 @@
  * @date     11/17/2023
  */
 
-#ifndef __FRAM_QUEUE_H__
-#define __FRAM_QUEUE_H__
+#ifndef STM32_LIB_FRAM_INCLUDE_FIFO_H_
+#define STM32_LIB_FRAM_INCLUDE_FIFO_H_
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
 #include <stdio.h>
 
-#include "i2c.h"
+#include "Inc/i2c.h"
 
-#include "fram.h"
+#include "include/fram.h"
 
 
 #ifndef FRAM_BUFFER_START
@@ -89,4 +91,4 @@ FramStatus FramBufferClear(void);
 }
 #endif
 
-#endif /* __FRAM_QUEUE_H__ */
+#endif  // STM32_LIB_FRAM_INCLUDE_FIFO_H_

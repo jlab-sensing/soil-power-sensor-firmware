@@ -1,3 +1,5 @@
+// Copyright 2023 UCSC
+
 /**
  * @file     fram.h
  * @author   Stephen Taylor
@@ -19,17 +21,17 @@
  * @date     11/17/2023 
  */
 
-#ifndef __FRAM_H__
-#define __FRAM_H__
+#ifndef STM32_LIB_FRAM_INCLUDE_FRAM_H_
+#define STM32_LIB_FRAM_INCLUDE_FRAM_H_
 
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
 #include <stdio.h>
 #include <stdint.h>
 
-#include "i2c.h"
+#include "Inc/i2c.h"
 
 #ifndef FRAM_PAGES
 /** Number of pages on the fram chip */
@@ -55,8 +57,8 @@ typedef struct user_configurations {
   uint64_t logger_ID;
   uint64_t gateway_EUI;
   uint64_t application_EUI;
-  uint64_t end_device_EUI; 
-  uint16_t logging_interval; 
+  uint64_t end_device_EUI;
+  uint16_t logging_interval;
   uint16_t upload_interval;
 } configuration;
 
@@ -123,4 +125,4 @@ configuration ReadSettings(void);
 }
 #endif
 
-#endif /* __FRAM_H__ */
+#endif  // STM32_LIB_FRAM_INCLUDE_FRAM_H_

@@ -2,6 +2,8 @@
     "files.associations": {
         "xmemory": "c",
         "adc.h": "c",
-        "app_lorawan.h": "c"
+        "app_lorawan.h": "c",
+        "stdint.h": "c",
+        "fram.h": "c"
     }
 }
