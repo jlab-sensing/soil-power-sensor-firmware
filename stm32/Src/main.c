@@ -39,6 +39,7 @@
 #include "phytos31.h"
 #include "rtc.h"
 #include "sensors.h"
+#include "user_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -120,6 +121,8 @@ int main(void)
   //SensorsAdd(ADC_measure);
   //SensorsAdd(SDI12_Teros12Measure);
   SensorsAdd(Phytos31_measure);
+
+  APP_LOG(TS_OFF, VLEVEL_M, "LoggerId: %d\r\nCell Id: %d\r\n", LOGGER_ID, CELL_ID);
 
 
   /* USER CODE END 2 */
